@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Droplets, Plus, Loader2, CheckCircle } from 'lucide-react';
+import { Droplets, Plus, Loader2, CheckCircle, Download, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateBillPdf } from '@/lib/pdfGenerator';
 
 interface Apartment { id: string; label: string; tenant_name: string | null; }
 interface WaterBill {
@@ -25,6 +26,8 @@ const WaterBills = () => {
   const [bills, setBills] = useState<WaterBill[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
   const [form, setForm] = useState({ apartment_id: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()), amount: '' });
 
   const fetchData = async () => {
@@ -58,17 +61,56 @@ const WaterBills = () => {
     fetchData();
   };
 
+  const downloadPdf = (bill: WaterBill) => {
+    generateBillPdf({
+      tenantName: bill.apartments?.tenant_name || 'N/A',
+      unitLabel: bill.apartments?.label || 'N/A',
+      month: MONTHS[bill.month - 1],
+      year: bill.year,
+      billType: 'Water',
+      amount: bill.amount || 0,
+      isPaid: !!bill.is_paid,
+    });
+  };
+
+  const filteredBills = bills.filter(b => {
+    if (filterMonth !== 'all' && b.month !== Number(filterMonth)) return false;
+    if (filterYear !== 'all' && b.year !== Number(filterYear)) return false;
+    return true;
+  });
+
+  const years = [...new Set(bills.map(b => b.year))].sort((a, b) => b - a);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">{t('nav.water')}</h1>
         <Button onClick={() => setShowAdd(true)} className="gold-gradient text-card">
           <Plus className="w-4 h-4 mr-1" /> {t('bill.add')}
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <Filter className="w-4 h-4 text-muted-foreground" />
+        <Select value={filterMonth} onValueChange={setFilterMonth}>
+          <SelectTrigger className="w-[120px]"><SelectValue placeholder="Month" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Months</SelectItem>
+            {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-[100px]"><SelectValue placeholder="Year" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {bills.map((bill) => (
+        {bills.length > 0 && filteredBills.map((bill) => (
           <Card key={bill.id}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
@@ -76,9 +118,14 @@ const WaterBills = () => {
                   <Droplets className="w-4 h-4 text-info" />
                   {bill.apartments?.label}
                 </CardTitle>
-                <Badge variant={bill.is_paid ? 'default' : 'destructive'} className={bill.is_paid ? 'bg-success' : ''}>
-                  {bill.is_paid ? t('bill.paid') : t('bill.unpaid')}
-                </Badge>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant={bill.is_paid ? 'default' : 'destructive'} className={bill.is_paid ? 'bg-success' : ''}>
+                    {bill.is_paid ? t('bill.paid') : t('bill.unpaid')}
+                  </Badge>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadPdf(bill)} title={bill.is_paid ? 'Download Receipt' : 'Download Invoice'}>
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
@@ -95,7 +142,7 @@ const WaterBills = () => {
             </CardContent>
           </Card>
         ))}
-        {bills.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">No water bills yet</p>}
+        {filteredBills.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">No water bills found</p>}
       </div>
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>

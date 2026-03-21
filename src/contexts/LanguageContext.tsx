@@ -24,6 +24,12 @@ const translations: Translations = {
   'auth.hasAccount': { en: 'Already have an account?', am: 'መለያ አለህ?' },
   'auth.pending': { en: 'Your account is pending approval', am: 'መለያህ እየተጠበቀ ነው' },
   'auth.rejected': { en: 'Your account has been rejected', am: 'መለያህ ተቀባይነት አላገኘም' },
+  'auth.rememberMe': { en: 'Remember me', am: 'አስታውሰኝ' },
+  'auth.forgotPassword': { en: 'Forgot password?', am: 'የይለፍ ቃል ረሱ?' },
+  'auth.sendResetLink': { en: 'Send Reset Link', am: 'የዳግም ማስጀመሪያ ልክ ላክ' },
+  'auth.backToLogin': { en: 'Back to Login', am: 'ወደ መግቢያ ተመለስ' },
+  'auth.newPassword': { en: 'New Password', am: 'አዲስ የይለፍ ቃል' },
+  'auth.updatePassword': { en: 'Update Password', am: 'የይለፍ ቃል አዘምን' },
   'auth.logout': { en: 'Logout', am: 'ውጣ' },
 
   // Nav
