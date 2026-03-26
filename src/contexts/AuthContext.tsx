@@ -7,12 +7,13 @@ interface Profile {
   user_id: string;
   full_name: string;
   email: string;
+  phone?: string;
   status: 'pending' | 'approved' | 'rejected';
   language: string;
 }
 
 interface UserRole {
-  role: 'super_admin' | 'admin' | 'user';
+  role: 'super_admin' | 'admin' | 'user' | 'tenant';
 }
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ interface AuthContextType {
   loading: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
+  isTenant: boolean;
   isApproved: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
@@ -116,12 +118,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isSuperAdmin = roles.includes('super_admin');
   const isAdmin = isSuperAdmin || roles.includes('admin');
+  const isTenant = roles.includes('tenant');
   const isApproved = profile?.status === 'approved';
 
   return (
     <AuthContext.Provider value={{
       user, session, profile, roles, loading,
-      isSuperAdmin, isAdmin, isApproved,
+      isSuperAdmin, isAdmin, isTenant, isApproved,
       signIn, signUp, signOut, refreshProfile,
     }}>
       {children}

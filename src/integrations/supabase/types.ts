@@ -27,6 +27,7 @@ export type Database = {
           rent_paid_months: number | null
           tenant_name: string | null
           tenant_phone: string | null
+          tenant_user_id: string | null
           updated_at: string
         }
         Insert: {
@@ -41,6 +42,7 @@ export type Database = {
           rent_paid_months?: number | null
           tenant_name?: string | null
           tenant_phone?: string | null
+          tenant_user_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -55,6 +57,7 @@ export type Database = {
           rent_paid_months?: number | null
           tenant_name?: string | null
           tenant_phone?: string | null
+          tenant_user_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -121,6 +124,65 @@ export type Database = {
           },
         ]
       }
+      payment_proofs: {
+        Row: {
+          amount: number | null
+          apartment_id: string
+          bill_id: string | null
+          bill_type: string
+          created_at: string
+          id: string
+          image_url: string
+          month: number | null
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tenant_user_id: string
+          year: number | null
+        }
+        Insert: {
+          amount?: number | null
+          apartment_id: string
+          bill_id?: string | null
+          bill_type: string
+          created_at?: string
+          id?: string
+          image_url: string
+          month?: number | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_user_id: string
+          year?: number | null
+        }
+        Update: {
+          amount?: number | null
+          apartment_id?: string
+          bill_id?: string | null
+          bill_type?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          month?: number | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_user_id?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_proofs_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -128,6 +190,7 @@ export type Database = {
           full_name: string
           id: string
           language: string
+          phone: string | null
           status: Database["public"]["Enums"]["approval_status"]
           updated_at: string
           user_id: string
@@ -138,6 +201,7 @@ export type Database = {
           full_name: string
           id?: string
           language?: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
           updated_at?: string
           user_id: string
@@ -148,6 +212,7 @@ export type Database = {
           full_name?: string
           id?: string
           language?: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
           updated_at?: string
           user_id?: string
@@ -267,9 +332,13 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      register_tenant: {
+        Args: { _apartment_id: string; _phone: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "super_admin" | "admin" | "user"
+      app_role: "super_admin" | "admin" | "user" | "tenant"
       approval_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -398,7 +467,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "user"],
+      app_role: ["super_admin", "admin", "user", "tenant"],
       approval_status: ["pending", "approved", "rejected"],
     },
   },

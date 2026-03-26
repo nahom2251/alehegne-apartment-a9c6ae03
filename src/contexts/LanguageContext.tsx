@@ -12,6 +12,11 @@ const translations: Translations = {
   'app.short': { en: 'AS Apt.', am: 'AS Apt.' },
   'app.powered': { en: 'Powered by NUN Tech', am: 'በNUN Tech ቴክ የተሰራ' },
   
+  // Index
+  'index.adminLogin': { en: 'Admin Login', am: 'የአስተዳዳሪ መግቢያ' },
+  'index.tenantLogin': { en: 'Tenant Login', am: 'የተከራይ መግቢያ' },
+  'index.chooseRole': { en: 'Choose how you want to sign in', am: 'እንዴት መግባት እንደሚፈልጉ ይምረጡ' },
+
   // Auth
   'auth.login': { en: 'Login', am: 'ግባ' },
   'auth.register': { en: 'Register', am: 'ተመዝገብ' },
@@ -31,6 +36,37 @@ const translations: Translations = {
   'auth.newPassword': { en: 'New Password', am: 'አዲስ የይለፍ ቃል' },
   'auth.updatePassword': { en: 'Update Password', am: 'የይለፍ ቃል አዘምን' },
   'auth.logout': { en: 'Logout', am: 'ውጣ' },
+
+  // Tenant
+  'tenant.login': { en: 'Tenant Login', am: 'የተከራይ መግቢያ' },
+  'tenant.register': { en: 'Tenant Registration', am: 'የተከራይ ምዝገባ' },
+  'tenant.portal': { en: 'Tenant Portal', am: 'የተከራይ ፖርታል' },
+  'tenant.selectApartment': { en: 'Select Your Apartment', am: 'አፓርትመንትዎን ይምረጡ' },
+  'tenant.phone': { en: 'Phone Number', am: 'ስልክ ቁጥር' },
+  'tenant.backToHome': { en: 'Back to Home', am: 'ወደ ዋና ገጽ ተመለስ' },
+  'tenant.dashboard': { en: 'Dashboard', am: 'ዳሽቦርድ' },
+  'tenant.bills': { en: 'Bills', am: 'ሂሳቦች' },
+  'tenant.payment': { en: 'Payment', am: 'ክፍያ' },
+  'tenant.history': { en: 'History', am: 'ታሪክ' },
+  'tenant.welcome': { en: 'Welcome', am: 'እንኳን ደህና መጡ' },
+  'tenant.rentStatus': { en: 'Rent Status', am: 'የኪራይ ሁኔታ' },
+  'tenant.dueDate': { en: 'Due Date', am: 'የክፍያ ቀን' },
+  'tenant.pendingElec': { en: 'Pending Electricity', am: 'ያልተከፈለ ኤሌክትሪክ' },
+  'tenant.pendingWater': { en: 'Pending Water', am: 'ያልተከፈለ ውሃ' },
+  'tenant.rent': { en: 'Rent', am: 'ኪራይ' },
+  'tenant.rentPayment': { en: 'Rent Payment', am: 'የኪራይ ክፍያ' },
+  'tenant.utilityPayment': { en: 'Utility Payment', am: 'የመገልገያ ክፍያ' },
+  'tenant.uploadProof': { en: 'Upload Payment Proof', am: 'የክፍያ ማረጋገጫ ያስገቡ' },
+  'tenant.billType': { en: 'Bill Type', am: 'የሂሳብ ዓይነት' },
+  'tenant.screenshot': { en: 'Payment Screenshot', am: 'የክፍያ ቅጽበታዊ ምስል' },
+  'tenant.submitProof': { en: 'Submit Payment Proof', am: 'የክፍያ ማረጋገጫ ያስገቡ' },
+  'tenant.proofSubmitted': { en: 'Payment proof submitted successfully!', am: 'የክፍያ ማረጋገጫ በተሳካ ሁኔታ ገብቷል!' },
+  'tenant.rentPayments': { en: 'Rent Payments', am: 'የኪራይ ክፍያዎች' },
+  'tenant.submittedProofs': { en: 'Submitted Proofs', am: 'የቀረቡ ማረጋገጫዎች' },
+  'tenant.noProofs': { en: 'No payment proofs submitted yet', am: 'እስካሁን ምንም የክፍያ ማረጋገጫ አልቀረበም' },
+  'tenant.submitted': { en: 'Submitted', am: 'ቀርቧል' },
+  'tenant.rejected': { en: 'Rejected', am: 'ውድቅ ሆኗል' },
+  'tenant.months': { en: 'months', am: 'ወራት' },
 
   // Nav
   'nav.dashboard': { en: 'Dashboard', am: 'ዳሽቦርድ' },
