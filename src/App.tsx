@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+// Authenticated routing component
 const AuthenticatedApp = () => {
   const { user, profile, loading, isApproved, isTenant } = useAuth();
 
