@@ -37,12 +37,7 @@ const TenantAuth = () => {
   }, [view]);
 
   const fetchAvailableApartments = async () => {
-    // Fetch apartments that are occupied but don't have a tenant_user_id yet
-    const { data } = await supabase
-      .from('apartments')
-      .select('id, label, tenant_name, tenant_user_id, is_occupied')
-      .eq('is_occupied', true)
-      .is('tenant_user_id', null);
+    const { data } = await supabase.rpc('get_available_apartments');
     if (data) setApartments(data as AvailableApartment[]);
   };
 
