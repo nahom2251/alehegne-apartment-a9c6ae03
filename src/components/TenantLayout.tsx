@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Building2, LayoutDashboard, Receipt, Upload, History, LogOut } from 'lucide-react';
+import { Building2, LayoutDashboard, Receipt, Upload, History, Settings, LogOut } from 'lucide-react';
 
 const TenantLayout = () => {
   const { signOut, profile } = useAuth();
@@ -16,6 +16,7 @@ const TenantLayout = () => {
     { to: '/tenant/bills', icon: Receipt, label: t('tenant.bills'), end: false },
     { to: '/tenant/payment', icon: Upload, label: t('tenant.payment'), end: false },
     { to: '/tenant/history', icon: History, label: t('tenant.history'), end: false },
+    { to: '/tenant/settings', icon: Settings, label: t('nav.settings'), end: false },
   ];
 
   return (

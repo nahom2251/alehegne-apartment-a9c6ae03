@@ -123,6 +123,28 @@ const translations: Translations = {
   'user.approved': { en: 'Approved', am: 'ጸድቋል' },
   'user.rejected': { en: 'Rejected', am: 'ውድቅ ሆኗል' },
 
+  // Settings
+  'settings.title': { en: 'Settings', am: 'ቅንብሮች' },
+  'settings.profileInfo': { en: 'Profile Information', am: 'የመገለጫ መረጃ' },
+  'settings.changePassword': { en: 'Change Password', am: 'የይለፍ ቃል ቀይር' },
+  'settings.confirmPassword': { en: 'Confirm Password', am: 'የይለፍ ቃል ያረጋግጡ' },
+  'settings.saveProfile': { en: 'Save Profile', am: 'መገለጫ አስቀምጥ' },
+  'settings.profileUpdated': { en: 'Profile updated!', am: 'መገለጫ ተዘምኗል!' },
+  'settings.passwordUpdated': { en: 'Password updated!', am: 'የይለፍ ቃል ተዘምኗል!' },
+  'settings.passwordMismatch': { en: 'Passwords do not match', am: 'የይለፍ ቃሎቹ አይገጣጠሙም' },
+  'settings.passwordTooShort': { en: 'Password must be at least 6 characters', am: 'የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት' },
+
+  // Admin tenant management
+  'admin.tenants': { en: 'Tenant Accounts', am: 'የተከራይ መለያዎች' },
+  'admin.deleteTenant': { en: 'Delete Account', am: 'መለያ ሰርዝ' },
+  'admin.resetPassword': { en: 'Reset Password', am: 'የይለፍ ቃል ዳግም አስጀምር' },
+  'admin.deleteConfirm': { en: 'Are you sure you want to delete this tenant account?', am: 'የዚህን ተከራይ መለያ ለመሰረዝ እርግጠኛ ነዎት?' },
+  'admin.resetConfirm': { en: 'Send password reset for this tenant?', am: 'ለዚህ ተከራይ የይለፍ ቃል ዳግም ማስጀመሪያ ይላክ?' },
+  'admin.deleted': { en: 'Tenant account deleted', am: 'የተከራይ መለያ ተሰርዟል' },
+  'admin.resetSent': { en: 'Password reset initiated', am: 'የይለፍ ቃል ዳግም ማስጀመሪያ ተልኳል' },
+  'auth.forgotPasswordMsg': { en: 'Enter your email to receive a reset link', am: 'የዳግም ማስጀመሪያ ሊንክ ለመቀበል ኢሜይልዎን ያስገቡ' },
+  'auth.resetLinkSent': { en: 'Reset link sent! Check your email.', am: 'የዳግም ማስጀመሪያ ሊንክ ተልኳል! ኢሜይልዎን ይፈትሹ.' },
+
   // Common
   'common.birr': { en: 'Birr', am: 'ብር' },
   'common.days': { en: 'days', am: 'ቀናት' },

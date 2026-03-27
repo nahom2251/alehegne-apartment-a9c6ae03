@@ -23,6 +23,8 @@ import TenantDashboard from "@/pages/TenantDashboard";
 import TenantBills from "@/pages/TenantBills";
 import TenantPayment from "@/pages/TenantPayment";
 import TenantHistory from "@/pages/TenantHistory";
+import TenantSettings from "@/pages/TenantSettings";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Index />} />
         <Route path="/admin" element={<Auth />} />
         <Route path="/tenant-login" element={<TenantAuth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -58,6 +61,7 @@ const AuthenticatedApp = () => {
           <Route path="bills" element={<TenantBills />} />
           <Route path="payment" element={<TenantPayment />} />
           <Route path="history" element={<TenantHistory />} />
+          <Route path="settings" element={<TenantSettings />} />
         </Route>
         <Route path="*" element={<Navigate to="/tenant" replace />} />
       </Routes>
