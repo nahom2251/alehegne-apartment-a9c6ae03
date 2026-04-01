@@ -22,6 +22,7 @@ import {
   DollarSign,
   Users,
   X,
+  Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
