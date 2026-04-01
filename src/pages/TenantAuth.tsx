@@ -39,8 +39,12 @@ const TenantAuth = () => {
 
   // Load remembered email
   useEffect(() => {
-    const saved = localStorage.getItem('tenant_email');
-    if (saved) { setEmail(saved); setRememberMe(true); }
+    const remembered = localStorage.getItem('tenant_remember') === 'true';
+    const savedEmail = localStorage.getItem('tenant_email');
+    if (remembered && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   const fetchAvailableApartments = async () => {
@@ -72,8 +76,13 @@ const TenantAuth = () => {
     setSubmitting(true);
 
     if (view === 'login') {
-      if (rememberMe) localStorage.setItem('tenant_email', email);
-      else localStorage.removeItem('tenant_email');
+      if (rememberMe) {
+        localStorage.setItem('tenant_email', email);
+        localStorage.setItem('tenant_remember', 'true');
+      } else {
+        localStorage.removeItem('tenant_email');
+        localStorage.removeItem('tenant_remember');
+      }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
