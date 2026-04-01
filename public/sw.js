@@ -23,25 +23,41 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  
-  // Network first for API calls
-  if (event.request.url.includes('supabase.co')) {
+
+  const url = new URL(event.request.url);
+
+  // Never cache dev/build tool assets or browser extension requests
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.pathname.includes('/@vite/') ||
+    url.pathname.includes('.hot-update') ||
+    url.searchParams.has('t')
+  ) {
+    return;
+  }
+
+  // Network first for API calls and HTML documents
+  if (event.request.mode === 'navigate' || event.request.url.includes('supabase.co')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Cache first for static assets
+  // Cache first only for safe static assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const fetched = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
+      const fetched = fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached);
+
       return cached || fetched;
     })
   );
