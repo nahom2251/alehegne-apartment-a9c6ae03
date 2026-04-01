@@ -4,9 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, Droplets, Home } from 'lucide-react';
+import { Zap, Droplets, Home, Upload, CheckCircle, Loader2, ImageIcon } from 'lucide-react';
 import { differenceInDays, addMonths, parseISO, format } from 'date-fns';
+import { toast } from 'sonner';
 
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -16,6 +19,8 @@ const TenantBills = () => {
   const [apartment, setApartment] = useState<any>(null);
   const [electricityBills, setElectricityBills] = useState<any[]>([]);
   const [waterBills, setWaterBills] = useState<any[]>([]);
+  const [uploadingBillId, setUploadingBillId] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ billId: string; billType: string; file: File; preview: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -49,6 +54,87 @@ const TenantBills = () => {
     fetchData();
   }, [user]);
 
+  const handleFileSelect = (billId: string, billType: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File must be under 5MB'); return; }
+    setSelectedFile({ billId, billType, file, preview: URL.createObjectURL(file) });
+  };
+
+  const handleSubmitProof = async (billId: string, billType: string, month: number, year: number, amount?: number) => {
+    if (!selectedFile || selectedFile.billId !== billId || !apartment || !user) return;
+    setUploadingBillId(billId);
+
+    try {
+      const fileExt = selectedFile.file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(filePath, selectedFile.file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase
+        .from('payment_proofs')
+        .insert({
+          tenant_user_id: user.id,
+          apartment_id: apartment.id,
+          bill_type: billType,
+          bill_id: billId,
+          image_url: urlData.publicUrl || filePath,
+          status: 'submitted',
+          month,
+          year,
+          amount: amount || null,
+        });
+      if (insertError) throw insertError;
+
+      toast.success(t('tenant.proofSubmitted'));
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+    setUploadingBillId(null);
+  };
+
+  const handleSubmitRentProof = async () => {
+    if (!selectedFile || selectedFile.billType !== 'rent' || !apartment || !user) return;
+    setUploadingBillId('rent');
+
+    try {
+      const fileExt = selectedFile.file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(filePath, selectedFile.file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase
+        .from('payment_proofs')
+        .insert({
+          tenant_user_id: user.id,
+          apartment_id: apartment.id,
+          bill_type: 'rent',
+          image_url: urlData.publicUrl || filePath,
+          status: 'submitted',
+          month: new Date().getMonth() + 1,
+          year: new Date().getFullYear(),
+          amount: apartment.monthly_rent || null,
+        });
+      if (insertError) throw insertError;
+
+      toast.success(t('tenant.proofSubmitted'));
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+    setUploadingBillId(null);
+  };
+
   const getRentInfo = () => {
     if (!apartment?.move_in_date || !apartment?.monthly_rent) return null;
     const moveIn = parseISO(apartment.move_in_date);
@@ -58,6 +144,23 @@ const TenantBills = () => {
   };
 
   const rentInfo = getRentInfo();
+
+  const UploadSection = ({ billId, billType }: { billId: string; billType: string }) => (
+    <div className="mt-3 space-y-2">
+      {selectedFile?.billId === billId && selectedFile.preview && (
+        <img src={selectedFile.preview} alt="Preview" className="w-full max-h-32 object-contain rounded-lg border border-border" />
+      )}
+      <div className="flex gap-2">
+        <label className="flex-1 cursor-pointer">
+          <Input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(billId, billType, e)} />
+          <div className="flex items-center justify-center gap-2 border border-dashed border-border rounded-lg py-2 px-3 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+            <ImageIcon className="w-4 h-4" />
+            {selectedFile?.billId === billId ? selectedFile.file.name : t('tenant.screenshot')}
+          </div>
+        </label>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -88,6 +191,23 @@ const TenantBills = () => {
                     </Badge>
                   </div>
                 </div>
+
+                <UploadSection billId="rent" billType="rent" />
+
+                {selectedFile?.billId === 'rent' && (
+                  <Button
+                    onClick={handleSubmitRentProof}
+                    disabled={uploadingBillId === 'rent'}
+                    className="w-full gold-gradient text-card font-semibold"
+                    size="sm"
+                  >
+                    {uploadingBillId === 'rent' ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('common.loading')}</>
+                    ) : (
+                      <><Upload className="w-4 h-4 mr-2" /> {t('tenant.submitProof')}</>
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -113,6 +233,26 @@ const TenantBills = () => {
                     </Badge>
                   </div>
                 </div>
+
+                {!bill.is_paid && (
+                  <>
+                    <UploadSection billId={bill.id} billType="electricity" />
+                    {selectedFile?.billId === bill.id && (
+                      <Button
+                        onClick={() => handleSubmitProof(bill.id, 'electricity', bill.month, bill.year, bill.total)}
+                        disabled={uploadingBillId === bill.id}
+                        className="w-full gold-gradient text-card font-semibold mt-2"
+                        size="sm"
+                      >
+                        {uploadingBillId === bill.id ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('common.loading')}</>
+                        ) : (
+                          <><Upload className="w-4 h-4 mr-2" /> {t('tenant.submitProof')}</>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -135,6 +275,26 @@ const TenantBills = () => {
                     </Badge>
                   </div>
                 </div>
+
+                {!bill.is_paid && (
+                  <>
+                    <UploadSection billId={bill.id} billType="water" />
+                    {selectedFile?.billId === bill.id && (
+                      <Button
+                        onClick={() => handleSubmitProof(bill.id, 'water', bill.month, bill.year, bill.amount)}
+                        disabled={uploadingBillId === bill.id}
+                        className="w-full gold-gradient text-card font-semibold mt-2"
+                        size="sm"
+                      >
+                        {uploadingBillId === bill.id ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('common.loading')}</>
+                        ) : (
+                          <><Upload className="w-4 h-4 mr-2" /> {t('tenant.submitProof')}</>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           ))}
