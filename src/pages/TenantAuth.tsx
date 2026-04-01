@@ -72,8 +72,13 @@ const TenantAuth = () => {
     setSubmitting(true);
 
     if (view === 'login') {
-      if (rememberMe) localStorage.setItem('tenant_email', email);
-      else localStorage.removeItem('tenant_email');
+      if (rememberMe) {
+        localStorage.setItem('tenant_email', email);
+        localStorage.setItem('tenant_remember', 'true');
+      } else {
+        localStorage.removeItem('tenant_email');
+        localStorage.removeItem('tenant_remember');
+      }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
