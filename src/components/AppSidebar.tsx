@@ -40,6 +40,7 @@ const AppSidebar = () => {
     { title: t('nav.electricity'), url: '/electricity', icon: Zap },
     { title: t('nav.water'), url: '/water', icon: Droplets },
     { title: t('nav.revenue'), url: '/revenue', icon: DollarSign },
+    { title: t('nav.paymentReview'), url: '/payments', icon: Receipt },
   ];
 
   if (isSuperAdmin) {
