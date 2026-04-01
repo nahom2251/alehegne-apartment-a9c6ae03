@@ -19,6 +19,7 @@ import ElectricityBills from "@/pages/ElectricityBills";
 import WaterBills from "@/pages/WaterBills";
 import Revenue from "@/pages/Revenue";
 import UserManagement from "@/pages/UserManagement";
+import PaymentReview from "@/pages/PaymentReview";
 import TenantDashboard from "@/pages/TenantDashboard";
 import TenantBills from "@/pages/TenantBills";
 import TenantPayment from "@/pages/TenantPayment";
