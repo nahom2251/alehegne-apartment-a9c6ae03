@@ -39,8 +39,12 @@ const TenantAuth = () => {
 
   // Load remembered email
   useEffect(() => {
-    const saved = localStorage.getItem('tenant_email');
-    if (saved) { setEmail(saved); setRememberMe(true); }
+    const remembered = localStorage.getItem('tenant_remember') === 'true';
+    const savedEmail = localStorage.getItem('tenant_email');
+    if (remembered && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   const fetchAvailableApartments = async () => {
