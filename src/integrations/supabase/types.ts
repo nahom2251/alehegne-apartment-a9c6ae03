@@ -340,6 +340,14 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      lookup_tenant_by_phone: {
+        Args: { _phone: string }
+        Returns: {
+          apartment_id: string
+          apartment_label: string
+          tenant_name: string
+        }[]
+      }
       register_tenant: {
         Args: { _apartment_id: string; _phone: string }
         Returns: undefined
