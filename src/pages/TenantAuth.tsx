@@ -5,37 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { Building2, Eye, EyeOff, Loader2, ArrowLeft, Search, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-
-interface AvailableApartment {
-  id: string;
-  label: string;
-  tenant_name: string | null;
-}
 
 const TenantAuth = () => {
   const [view, setView] = useState<'login' | 'register' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedApartment, setSelectedApartment] = useState('');
-  const [apartments, setApartments] = useState<AvailableApartment[]>([]);
-  const [autoFilledName, setAutoFilledName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (view === 'register') {
-      fetchAvailableApartments();
-    }
-  }, [view]);
+  // Phone lookup state
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [foundApartment, setFoundApartment] = useState<{ apartment_id: string; apartment_label: string; tenant_name: string } | null>(null);
+  const [phoneLookedUp, setPhoneLookedUp] = useState(false);
 
   // Load remembered email
   useEffect(() => {
@@ -47,15 +36,30 @@ const TenantAuth = () => {
     }
   }, []);
 
-  const fetchAvailableApartments = async () => {
-    const { data } = await supabase.rpc('get_available_apartments');
-    if (data) setApartments(data as AvailableApartment[]);
+  const handlePhoneLookup = async () => {
+    if (!phone.trim()) { toast.error(t('tenant.enterPhone')); return; }
+    setLookupLoading(true);
+    setFoundApartment(null);
+    setPhoneLookedUp(false);
+
+    const { data, error } = await supabase.rpc('lookup_tenant_by_phone', { _phone: phone.trim() });
+    setLookupLoading(false);
+    setPhoneLookedUp(true);
+
+    if (error) { toast.error(error.message); return; }
+    if (data && data.length > 0) {
+      setFoundApartment(data[0]);
+    } else {
+      toast.error(t('tenant.phoneNotFound'));
+    }
   };
 
-  const handleApartmentChange = (aptId: string) => {
-    setSelectedApartment(aptId);
-    const apt = apartments.find(a => a.id === aptId);
-    setAutoFilledName(apt?.tenant_name || '');
+  const resetRegisterForm = () => {
+    setPhone('');
+    setFoundApartment(null);
+    setPhoneLookedUp(false);
+    setEmail('');
+    setPassword('');
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -83,17 +87,15 @@ const TenantAuth = () => {
         localStorage.removeItem('tenant_email');
         localStorage.removeItem('tenant_remember');
       }
-
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
     } else if (view === 'register') {
-      if (!selectedApartment) { toast.error('Please select your apartment'); setSubmitting(false); return; }
-      if (!phone.trim()) { toast.error('Please enter your phone number'); setSubmitting(false); return; }
+      if (!foundApartment) { toast.error(t('tenant.lookupFirst')); setSubmitting(false); return; }
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email, password,
         options: {
-          data: { full_name: autoFilledName || 'Tenant' },
+          data: { full_name: foundApartment.tenant_name || 'Tenant' },
           emailRedirectTo: window.location.origin,
         },
       });
@@ -101,15 +103,138 @@ const TenantAuth = () => {
 
       if (signUpData.user) {
         const { error: regError } = await supabase.rpc('register_tenant', {
-          _apartment_id: selectedApartment,
+          _apartment_id: foundApartment.apartment_id,
           _phone: phone,
         });
         if (regError) toast.error(regError.message);
-        else { toast.success('Account created! You can now sign in.'); setView('login'); }
+        else { toast.success(t('tenant.accountCreated')); resetRegisterForm(); setView('login'); }
       }
     }
     setSubmitting(false);
   };
+
+  const renderForgotForm = () => (
+    <form onSubmit={handleForgotPassword} className="space-y-4">
+      <div>
+        <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
+      </div>
+      <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
+        {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        {t('auth.sendResetLink')}
+      </Button>
+      <div className="text-center">
+        <button type="button" onClick={() => setView('login')} className="text-sm text-primary hover:underline">
+          {t('auth.backToLogin')}
+        </button>
+      </div>
+    </form>
+  );
+
+  const renderRegisterForm = () => (
+    <div className="space-y-4">
+      {/* Step 1: Phone lookup */}
+      <div>
+        <label className="text-sm font-medium text-foreground">{t('tenant.phone')}</label>
+        <div className="flex gap-2 mt-1">
+          <Input
+            type="tel"
+            value={phone}
+            onChange={e => { setPhone(e.target.value); setFoundApartment(null); setPhoneLookedUp(false); }}
+            placeholder="09XXXXXXXX"
+            disabled={!!foundApartment}
+          />
+          {!foundApartment ? (
+            <Button type="button" onClick={handlePhoneLookup} disabled={lookupLoading} variant="outline" size="icon" className="shrink-0">
+              {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            </Button>
+          ) : (
+            <Button type="button" onClick={resetRegisterForm} variant="outline" size="icon" className="shrink-0">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Step 2: Show found info */}
+      {foundApartment && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+          <div className="flex items-center gap-2 text-primary">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm font-medium">{t('tenant.tenantFound')}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">{t('auth.fullName')}:</span>
+              <p className="font-medium text-foreground">{foundApartment.tenant_name}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">{t('tenant.apartment')}:</span>
+              <p className="font-medium text-foreground">{foundApartment.apartment_label}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {phoneLookedUp && !foundApartment && (
+        <p className="text-sm text-destructive text-center">{t('tenant.phoneNotFound')}</p>
+      )}
+
+      {/* Step 3: Email & password (only after successful lookup) */}
+      {foundApartment && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+            <div className="relative mt-1">
+              <Input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.password')} required minLength={6} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {t('auth.registerBtn')}
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+
+  const renderLoginForm = () => (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+        <div className="relative mt-1">
+          <Input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.password')} required minLength={6} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)} />
+          <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">{t('auth.rememberMe')}</label>
+        </div>
+        <button type="button" onClick={() => setView('forgot')} className="text-sm text-primary hover:underline">
+          {t('auth.forgotPassword')}
+        </button>
+      </div>
+      <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
+        {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        {t('auth.loginBtn')}
+      </Button>
+    </form>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -131,82 +256,13 @@ const TenantAuth = () => {
             </p>
           </CardHeader>
           <CardContent>
-            {view === 'forgot' ? (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
-                </div>
-                <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
-                  {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {t('auth.sendResetLink')}
-                </Button>
-                <div className="text-center">
-                  <button type="button" onClick={() => setView('login')} className="text-sm text-primary hover:underline">
-                    {t('auth.backToLogin')}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {view === 'register' && (
-                  <>
-                    <div>
-                      <label className="text-sm font-medium text-foreground">{t('tenant.selectApartment')}</label>
-                      <Select value={selectedApartment} onValueChange={handleApartmentChange}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder={t('tenant.selectApartment')} /></SelectTrigger>
-                        <SelectContent>
-                          {apartments.map(apt => (
-                            <SelectItem key={apt.id} value={apt.id}>{apt.label} - {apt.tenant_name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {autoFilledName && (
-                      <div>
-                        <label className="text-sm font-medium text-foreground">{t('auth.fullName')}</label>
-                        <Input value={autoFilledName} disabled className="mt-1 bg-muted" />
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-sm font-medium text-foreground">{t('tenant.phone')}</label>
-                      <Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="09XXXXXXXX" className="mt-1" required />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
-                  <div className="relative mt-1">
-                    <Input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.password')} required minLength={6} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                {view === 'login' && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)} />
-                      <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">{t('auth.rememberMe')}</label>
-                    </div>
-                    <button type="button" onClick={() => setView('forgot')} className="text-sm text-primary hover:underline">
-                      {t('auth.forgotPassword')}
-                    </button>
-                  </div>
-                )}
-                <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
-                  {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {view === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')}
-                </Button>
-              </form>
-            )}
+            {view === 'forgot' && renderForgotForm()}
+            {view === 'login' && renderLoginForm()}
+            {view === 'register' && renderRegisterForm()}
+
             {view !== 'forgot' && (
               <div className="mt-4 text-center">
-                <button onClick={() => setView(view === 'login' ? 'register' : 'login')} className="text-sm text-primary hover:underline">
+                <button onClick={() => { resetRegisterForm(); setView(view === 'login' ? 'register' : 'login'); }} className="text-sm text-primary hover:underline">
                   {view === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
                 </button>
               </div>
