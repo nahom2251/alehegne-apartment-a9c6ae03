@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, CreditCard, Phone, CheckCircle, Loader2 } from 'lucide-react';
+import { Upload, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import cbeLogo from '@/assets/cbe-logo.jpeg';
+import telebirrLogo from '@/assets/telebirr-logo.jpeg';
 
 const TenantPayment = () => {
   const { user } = useAuth();
