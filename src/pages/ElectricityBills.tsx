@@ -42,10 +42,12 @@ const ElectricityBills = () => {
   useEffect(() => { fetchData(); }, []);
 
   const calculateTotal = (kwh: number, rate: number) => {
-    const baseCost = kwh * rate;
-    const tax = baseCost * 0.15;
-    const controlTax = baseCost * 0.005;
-    return baseCost + 16 + tax + 10 + controlTax;
+    const base = kwh * rate;
+    const step1 = base + 16;
+    const step2 = step1 + (0.15 * step1);
+    const step3 = step2 + 10;
+    const total = step3 + (0.005 * step3);
+    return total;
   };
 
   const handleAdd = async () => {
@@ -77,7 +79,10 @@ const ElectricityBills = () => {
   };
 
   const downloadPdf = (bill: ElecBill) => {
-    const baseCost = bill.kwh * bill.rate;
+    const base = bill.kwh * bill.rate;
+    const step1 = base + 16;
+    const step2 = step1 + (0.15 * step1);
+    const step3 = step2 + 10;
     generateBillPdf({
       tenantName: bill.apartments?.tenant_name || 'N/A',
       unitLabel: bill.apartments?.label || 'N/A',
@@ -89,11 +94,14 @@ const ElectricityBills = () => {
       details: {
         'kWh consumed': bill.kwh,
         'Rate per kWh': bill.rate,
-        'Base cost': baseCost.toFixed(2),
+        'Base cost': base.toFixed(2),
         'Service fee': '16.00',
-        'Tax (15%)': (baseCost * 0.15).toFixed(2),
+        'After service (Base+16)': step1.toFixed(2),
+        'Tax (15%)': (0.15 * step1).toFixed(2),
+        'After tax': step2.toFixed(2),
         'TV Tax': '10.00',
-        'Control Tax (0.5%)': (baseCost * 0.005).toFixed(2),
+        'After TV tax': step3.toFixed(2),
+        'Control Tax (0.5%)': (0.005 * step3).toFixed(2),
       },
     });
   };
