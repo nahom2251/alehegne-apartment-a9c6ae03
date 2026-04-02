@@ -94,31 +94,31 @@ const TenantPayment = () => {
       <h1 className="text-2xl font-bold">{t('tenant.payment')}</h1>
 
       {/* Payment Instructions */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-primary" />
-            {t('tenant.rentPayment')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm"><span className="font-medium">Method:</span> CBE Bank Transfer</p>
-          <p className="text-sm"><span className="font-medium">Account:</span> Bayush Kassa</p>
-          <p className="text-sm font-mono text-primary font-semibold">1000499143072</p>
+      <Card className="group">
+        <CardContent className="flex items-start gap-4 pt-6">
+          <div className="w-10 h-10 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+            <img src={cbeLogo} alt="CBE Logo" className="w-full h-full object-contain" />
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-base">{t('tenant.rentPayment')}</CardTitle>
+            <p className="text-sm"><span className="font-medium">Method:</span> CBE Bank Transfer</p>
+            <p className="text-sm"><span className="font-medium">Account:</span> Bayush Kassa</p>
+            <p className="text-sm font-mono text-primary font-semibold">1000499143072</p>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Phone className="w-4 h-4 text-primary" />
-            {t('tenant.utilityPayment')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <p className="text-sm"><span className="font-medium">Method:</span> Telebirr</p>
-          <p className="text-sm"><span className="font-medium">Account:</span> Alehegne</p>
-          <p className="text-sm font-mono text-primary font-semibold">0911238816</p>
+      <Card className="group">
+        <CardContent className="flex items-start gap-4 pt-6">
+          <div className="w-10 h-10 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+            <img src={telebirrLogo} alt="Telebirr Logo" className="w-full h-full object-contain" />
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-base">{t('tenant.utilityPayment')}</CardTitle>
+            <p className="text-sm"><span className="font-medium">Method:</span> Telebirr</p>
+            <p className="text-sm"><span className="font-medium">Account:</span> Alehegne</p>
+            <p className="text-sm font-mono text-primary font-semibold">0911238816</p>
+          </div>
         </CardContent>
       </Card>
 
