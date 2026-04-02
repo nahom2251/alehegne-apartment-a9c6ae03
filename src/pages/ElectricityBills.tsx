@@ -42,10 +42,12 @@ const ElectricityBills = () => {
   useEffect(() => { fetchData(); }, []);
 
   const calculateTotal = (kwh: number, rate: number) => {
-    const baseCost = kwh * rate;
-    const tax = baseCost * 0.15;
-    const controlTax = baseCost * 0.005;
-    return baseCost + 16 + tax + 10 + controlTax;
+    const base = kwh * rate;
+    const step1 = base + 16;
+    const step2 = step1 + (0.15 * step1);
+    const step3 = step2 + 10;
+    const total = step3 + (0.005 * step3);
+    return total;
   };
 
   const handleAdd = async () => {
