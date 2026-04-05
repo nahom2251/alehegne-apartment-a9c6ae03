@@ -17,6 +17,7 @@ import Dashboard from "@/pages/Dashboard";
 import Apartments from "@/pages/Apartments";
 import ElectricityBills from "@/pages/ElectricityBills";
 import WaterBills from "@/pages/WaterBills";
+import SecurityBills from "@/pages/SecurityBills";
 import Revenue from "@/pages/Revenue";
 import UserManagement from "@/pages/UserManagement";
 import PaymentReview from "@/pages/PaymentReview";
