@@ -10,7 +10,7 @@ const TenantDashboard = () => {
   const { user, profile } = useAuth();
   const { t } = useLanguage();
   const [apartment, setApartment] = useState<any>(null);
-  const [pendingBills, setPendingBills] = useState({ electricity: 0, water: 0 });
+  const [pendingBills, setPendingBills] = useState({ electricity: 0, water: 0, security: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -37,7 +37,13 @@ const TenantDashboard = () => {
           .eq('apartment_id', apt.id)
           .eq('is_paid', false);
 
-        setPendingBills({ electricity: elecCount || 0, water: waterCount || 0 });
+        const { count: securityCount } = await supabase
+          .from('security_bills')
+          .select('*', { count: 'exact', head: true })
+          .eq('apartment_id', apt.id)
+          .eq('is_paid', false);
+
+        setPendingBills({ electricity: elecCount || 0, water: waterCount || 0, security: securityCount || 0 });
       }
     };
     fetchData();
@@ -105,7 +111,7 @@ const TenantDashboard = () => {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-primary">{pendingBills.electricity}</p>
@@ -116,6 +122,12 @@ const TenantDashboard = () => {
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-info">{pendingBills.water}</p>
             <p className="text-xs text-muted-foreground">{t('tenant.pendingWater')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4 text-center">
+            <p className="text-2xl font-bold text-primary">{pendingBills.security}</p>
+            <p className="text-xs text-muted-foreground">{t('tenant.pendingSecurity')}</p>
           </CardContent>
         </Card>
       </div>

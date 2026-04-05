@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, Droplets, Home, Upload, CheckCircle, Loader2, ImageIcon } from 'lucide-react';
+import { Zap, Droplets, Home, Upload, CheckCircle, Loader2, ImageIcon, ShieldCheck } from 'lucide-react';
 import { differenceInDays, addMonths, parseISO, format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -19,6 +19,7 @@ const TenantBills = () => {
   const [apartment, setApartment] = useState<any>(null);
   const [electricityBills, setElectricityBills] = useState<any[]>([]);
   const [waterBills, setWaterBills] = useState<any[]>([]);
+  const [securityBills, setSecurityBills] = useState<any[]>([]);
   const [uploadingBillId, setUploadingBillId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ billId: string; billType: string; file: File; preview: string } | null>(null);
 
@@ -49,6 +50,14 @@ const TenantBills = () => {
           .order('year', { ascending: false })
           .order('month', { ascending: false });
         if (water) setWaterBills(water);
+
+        const { data: security } = await supabase
+          .from('security_bills')
+          .select('*')
+          .eq('apartment_id', apt.id)
+          .order('year', { ascending: false })
+          .order('month', { ascending: false });
+        if (security) setSecurityBills(security);
       }
     };
     fetchData();
@@ -167,10 +176,11 @@ const TenantBills = () => {
       <h1 className="text-2xl font-bold">{t('tenant.bills')}</h1>
 
       <Tabs defaultValue="rent">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="rent" className="text-xs gap-1"><Home className="w-3.5 h-3.5" />{t('tenant.rent')}</TabsTrigger>
           <TabsTrigger value="electricity" className="text-xs gap-1"><Zap className="w-3.5 h-3.5" />{t('nav.electricity')}</TabsTrigger>
           <TabsTrigger value="water" className="text-xs gap-1"><Droplets className="w-3.5 h-3.5" />{t('nav.water')}</TabsTrigger>
+          <TabsTrigger value="security" className="text-xs gap-1"><ShieldCheck className="w-3.5 h-3.5" />{t('nav.security')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rent" className="mt-4">
@@ -282,6 +292,48 @@ const TenantBills = () => {
                     {selectedFile?.billId === bill.id && (
                       <Button
                         onClick={() => handleSubmitProof(bill.id, 'water', bill.month, bill.year, bill.amount)}
+                        disabled={uploadingBillId === bill.id}
+                        className="w-full gold-gradient text-card font-semibold mt-2"
+                        size="sm"
+                      >
+                        {uploadingBillId === bill.id ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('common.loading')}</>
+                        ) : (
+                          <><Upload className="w-4 h-4 mr-2" /> {t('tenant.submitProof')}</>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-4 space-y-3">
+          {securityBills.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No security bills</p>
+          ) : securityBills.map(bill => (
+            <Card key={bill.id}>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{monthNames[bill.month - 1]} {bill.year}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{bill.amount?.toLocaleString()} {t('common.birr')}</p>
+                    <Badge variant={bill.is_paid ? 'default' : 'destructive'}>
+                      {bill.is_paid ? t('bill.paid') : t('bill.unpaid')}
+                    </Badge>
+                  </div>
+                </div>
+
+                {!bill.is_paid && (
+                  <>
+                    <UploadSection billId={bill.id} billType="security" />
+                    {selectedFile?.billId === bill.id && (
+                      <Button
+                        onClick={() => handleSubmitProof(bill.id, 'security', bill.month, bill.year, bill.amount)}
                         disabled={uploadingBillId === bill.id}
                         className="w-full gold-gradient text-card font-semibold mt-2"
                         size="sm"

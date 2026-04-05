@@ -260,6 +260,47 @@ export type Database = {
           },
         ]
       }
+      security_bills: {
+        Row: {
+          amount: number
+          apartment_id: string
+          created_at: string
+          id: string
+          is_paid: boolean | null
+          month: number
+          paid_at: string | null
+          year: number
+        }
+        Insert: {
+          amount?: number
+          apartment_id: string
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          month: number
+          paid_at?: string | null
+          year: number
+        }
+        Update: {
+          amount?: number
+          apartment_id?: string
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          month?: number
+          paid_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_bills_apartment_id_fkey"
+            columns: ["apartment_id"]
+            isOneToOne: false
+            referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

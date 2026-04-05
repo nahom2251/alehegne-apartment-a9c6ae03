@@ -5,7 +5,7 @@ interface BillData {
   unitLabel: string;
   month: string;
   year: number;
-  billType: 'Rent' | 'Electricity' | 'Water';
+  billType: 'Rent' | 'Electricity' | 'Water' | 'Security';
   amount: number;
   isPaid: boolean;
   details?: Record<string, string | number>;
