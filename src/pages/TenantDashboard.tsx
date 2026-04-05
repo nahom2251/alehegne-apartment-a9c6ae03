@@ -111,7 +111,7 @@ const TenantDashboard = () => {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-primary">{pendingBills.electricity}</p>
@@ -122,6 +122,12 @@ const TenantDashboard = () => {
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-info">{pendingBills.water}</p>
             <p className="text-xs text-muted-foreground">{t('tenant.pendingWater')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4 text-center">
+            <p className="text-2xl font-bold text-primary">{pendingBills.security}</p>
+            <p className="text-xs text-muted-foreground">{t('tenant.pendingSecurity')}</p>
           </CardContent>
         </Card>
       </div>

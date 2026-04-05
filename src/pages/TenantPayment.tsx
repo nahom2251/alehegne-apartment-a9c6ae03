@@ -141,6 +141,7 @@ const TenantPayment = () => {
                 <SelectItem value="rent">{t('tenant.rent')}</SelectItem>
                 <SelectItem value="electricity">{t('nav.electricity')}</SelectItem>
                 <SelectItem value="water">{t('nav.water')}</SelectItem>
+                <SelectItem value="security">{t('nav.security')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
