@@ -19,6 +19,7 @@ const TenantBills = () => {
   const [apartment, setApartment] = useState<any>(null);
   const [electricityBills, setElectricityBills] = useState<any[]>([]);
   const [waterBills, setWaterBills] = useState<any[]>([]);
+  const [securityBills, setSecurityBills] = useState<any[]>([]);
   const [uploadingBillId, setUploadingBillId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ billId: string; billType: string; file: File; preview: string } | null>(null);
 
