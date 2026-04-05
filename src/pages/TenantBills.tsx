@@ -176,10 +176,11 @@ const TenantBills = () => {
       <h1 className="text-2xl font-bold">{t('tenant.bills')}</h1>
 
       <Tabs defaultValue="rent">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="rent" className="text-xs gap-1"><Home className="w-3.5 h-3.5" />{t('tenant.rent')}</TabsTrigger>
           <TabsTrigger value="electricity" className="text-xs gap-1"><Zap className="w-3.5 h-3.5" />{t('nav.electricity')}</TabsTrigger>
           <TabsTrigger value="water" className="text-xs gap-1"><Droplets className="w-3.5 h-3.5" />{t('nav.water')}</TabsTrigger>
+          <TabsTrigger value="security" className="text-xs gap-1"><ShieldCheck className="w-3.5 h-3.5" />{t('nav.security')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rent" className="mt-4">
