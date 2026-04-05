@@ -309,6 +309,48 @@ const TenantBills = () => {
             </Card>
           ))}
         </TabsContent>
+
+        <TabsContent value="security" className="mt-4 space-y-3">
+          {securityBills.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No security bills</p>
+          ) : securityBills.map(bill => (
+            <Card key={bill.id}>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{monthNames[bill.month - 1]} {bill.year}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{bill.amount?.toLocaleString()} {t('common.birr')}</p>
+                    <Badge variant={bill.is_paid ? 'default' : 'destructive'}>
+                      {bill.is_paid ? t('bill.paid') : t('bill.unpaid')}
+                    </Badge>
+                  </div>
+                </div>
+
+                {!bill.is_paid && (
+                  <>
+                    <UploadSection billId={bill.id} billType="security" />
+                    {selectedFile?.billId === bill.id && (
+                      <Button
+                        onClick={() => handleSubmitProof(bill.id, 'security', bill.month, bill.year, bill.amount)}
+                        disabled={uploadingBillId === bill.id}
+                        className="w-full gold-gradient text-card font-semibold mt-2"
+                        size="sm"
+                      >
+                        {uploadingBillId === bill.id ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('common.loading')}</>
+                        ) : (
+                          <><Upload className="w-4 h-4 mr-2" /> {t('tenant.submitProof')}</>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
       </Tabs>
     </div>
   );
