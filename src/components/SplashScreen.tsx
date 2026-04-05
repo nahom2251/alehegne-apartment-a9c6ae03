@@ -58,10 +58,6 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
           AS Apartment
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-sm text-muted-foreground mt-3">
-          Welcome to the pinnacle of luxury living
-        </p>
 
         {/* Progress bar */}
         <div className="mt-10 w-64">
