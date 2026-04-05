@@ -37,7 +37,13 @@ const TenantDashboard = () => {
           .eq('apartment_id', apt.id)
           .eq('is_paid', false);
 
-        setPendingBills({ electricity: elecCount || 0, water: waterCount || 0 });
+        const { count: securityCount } = await supabase
+          .from('security_bills')
+          .select('*', { count: 'exact', head: true })
+          .eq('apartment_id', apt.id)
+          .eq('is_paid', false);
+
+        setPendingBills({ electricity: elecCount || 0, water: waterCount || 0, security: securityCount || 0 });
       }
     };
     fetchData();
