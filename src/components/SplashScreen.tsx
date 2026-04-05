@@ -84,6 +84,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
 
       {/* Footer */}
       <footer className="absolute bottom-6 text-center">
+        <p className="text-xs text-muted-foreground">Powered by NUN Tech</p>
         <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} NUN Tech. All rights reserved.</p>
       </footer>
     </div>
