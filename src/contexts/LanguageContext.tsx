@@ -60,6 +60,7 @@ const translations: Translations = {
   'tenant.dueDate': { en: 'Due Date', am: 'የክፍያ ቀን' },
   'tenant.pendingElec': { en: 'Pending Electricity', am: 'ያልተከፈለ ኤሌክትሪክ' },
   'tenant.pendingWater': { en: 'Pending Water', am: 'ያልተከፈለ ውሃ' },
+  'tenant.pendingSecurity': { en: 'Pending Security', am: 'ያልተከፈለ ጥበቃ' },
   'tenant.rent': { en: 'Rent', am: 'ኪራይ' },
   'tenant.rentPayment': { en: 'Rent Payment', am: 'የኪራይ ክፍያ' },
   'tenant.utilityPayment': { en: 'Utility Payment', am: 'የመገልገያ ክፍያ' },
