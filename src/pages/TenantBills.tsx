@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, Droplets, Home, Upload, CheckCircle, Loader2, ImageIcon } from 'lucide-react';
+import { Zap, Droplets, Home, Upload, CheckCircle, Loader2, ImageIcon, ShieldCheck } from 'lucide-react';
 import { differenceInDays, addMonths, parseISO, format } from 'date-fns';
 import { toast } from 'sonner';
 
