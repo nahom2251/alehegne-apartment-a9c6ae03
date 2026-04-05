@@ -10,7 +10,7 @@ const TenantDashboard = () => {
   const { user, profile } = useAuth();
   const { t } = useLanguage();
   const [apartment, setApartment] = useState<any>(null);
-  const [pendingBills, setPendingBills] = useState({ electricity: 0, water: 0 });
+  const [pendingBills, setPendingBills] = useState({ electricity: 0, water: 0, security: 0 });
 
   useEffect(() => {
     if (!user) return;
