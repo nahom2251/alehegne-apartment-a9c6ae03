@@ -58,18 +58,6 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
           AS Apartment
         </h1>
 
-        {/* Tagline */}
-        <p
-          className="text-xs md:text-sm tracking-[0.3em] uppercase mt-2 font-semibold"
-          style={{
-            background: 'linear-gradient(135deg, hsl(43,76%,52%), hsl(43,60%,65%))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          Sophistication & Excellence
-        </p>
-
         {/* Subtitle */}
         <p className="text-sm text-muted-foreground mt-3">
           Welcome to the pinnacle of luxury living
