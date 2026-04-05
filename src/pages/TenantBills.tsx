@@ -50,6 +50,14 @@ const TenantBills = () => {
           .order('year', { ascending: false })
           .order('month', { ascending: false });
         if (water) setWaterBills(water);
+
+        const { data: security } = await supabase
+          .from('security_bills')
+          .select('*')
+          .eq('apartment_id', apt.id)
+          .order('year', { ascending: false })
+          .order('month', { ascending: false });
+        if (security) setSecurityBills(security);
       }
     };
     fetchData();
