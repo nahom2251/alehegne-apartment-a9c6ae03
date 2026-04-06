@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import cbeLogo from '@/assets/cbe-logo.jpeg';
+import oromiaBankLogo from '@/assets/oromia-bank-logo.png';
 import telebirrLogo from '@/assets/telebirr-logo.jpeg';
 
 const TenantPayment = () => {
