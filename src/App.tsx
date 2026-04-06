@@ -18,6 +18,7 @@ import Apartments from "@/pages/Apartments";
 import ElectricityBills from "@/pages/ElectricityBills";
 import WaterBills from "@/pages/WaterBills";
 import SecurityBills from "@/pages/SecurityBills";
+import RentBilling from "@/pages/RentBilling";
 import Revenue from "@/pages/Revenue";
 import UserManagement from "@/pages/UserManagement";
 import PaymentReview from "@/pages/PaymentReview";
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
         <Route path="/electricity" element={<ElectricityBills />} />
         <Route path="/water" element={<WaterBills />} />
         <Route path="/security" element={<SecurityBills />} />
+        <Route path="/rent" element={<RentBilling />} />
         <Route path="/revenue" element={<Revenue />} />
         <Route path="/payments" element={<PaymentReview />} />
         <Route path="/users" element={<UserManagement />} />
