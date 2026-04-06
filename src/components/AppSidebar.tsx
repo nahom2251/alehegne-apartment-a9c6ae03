@@ -24,6 +24,7 @@ import {
   X,
   Receipt,
   ShieldCheck,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
