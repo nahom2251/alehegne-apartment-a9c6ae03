@@ -54,10 +54,15 @@ const PaymentReview = () => {
       // If approved and has bill_id, mark the bill as paid
       const proof = proofs.find(p => p.id === proofId);
       if (status === 'approved' && proof?.bill_id) {
+        const paidUpdate = { is_paid: true, paid_at: new Date().toISOString() };
         if (proof.bill_type === 'electricity') {
-          await supabase.from('electricity_bills').update({ is_paid: true, paid_at: new Date().toISOString() }).eq('id', proof.bill_id);
+          await supabase.from('electricity_bills').update(paidUpdate).eq('id', proof.bill_id);
         } else if (proof.bill_type === 'water') {
-          await supabase.from('water_bills').update({ is_paid: true, paid_at: new Date().toISOString() }).eq('id', proof.bill_id);
+          await supabase.from('water_bills').update(paidUpdate).eq('id', proof.bill_id);
+        } else if (proof.bill_type === 'security') {
+          await supabase.from('security_bills').update(paidUpdate).eq('id', proof.bill_id);
+        } else if (proof.bill_type === 'rent') {
+          await supabase.from('rent_bills').update(paidUpdate).eq('id', proof.bill_id);
         }
       }
 
