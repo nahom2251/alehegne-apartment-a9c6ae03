@@ -13,9 +13,9 @@ interface BillData {
 
 const PAYMENT_CONFIG = {
   rent: {
-    method: 'CBE Bank Transfer',
-    accountName: 'Bayush Kassa',
-    accountNumber: '1000499143072',
+    method: 'Oromia Bank Transfer',
+    accountName: 'Alehegne Sewnet',
+    accountNumber: '1368234100001',
   },
   utility: {
     method: 'Telebirr',

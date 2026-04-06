@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import cbeLogo from '@/assets/cbe-logo.jpeg';
+import oromiaBankLogo from '@/assets/oromia-bank-logo.png';
 import telebirrLogo from '@/assets/telebirr-logo.jpeg';
 
 const TenantPayment = () => {
@@ -97,13 +97,13 @@ const TenantPayment = () => {
       <Card className="group">
         <CardContent className="flex items-start gap-4 pt-6">
           <div className="w-10 h-10 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-            <img src={cbeLogo} alt="CBE Logo" className="w-full h-full object-contain" />
+            <img src={oromiaBankLogo} alt="Oromia Bank Logo" className="w-full h-full object-contain" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-base">{t('tenant.rentPayment')}</CardTitle>
-            <p className="text-sm"><span className="font-medium">Method:</span> CBE Bank Transfer</p>
-            <p className="text-sm"><span className="font-medium">Account:</span> Bayush Kassa</p>
-            <p className="text-sm font-mono text-primary font-semibold">1000499143072</p>
+            <p className="text-sm"><span className="font-medium">Method:</span> Oromia Bank Transfer</p>
+            <p className="text-sm"><span className="font-medium">Account:</span> Alehegne Sewnet</p>
+            <p className="text-sm font-mono text-primary font-semibold">1368234100001</p>
           </div>
         </CardContent>
       </Card>
