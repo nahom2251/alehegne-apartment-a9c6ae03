@@ -82,6 +82,7 @@ const translations: Translations = {
   'nav.electricity': { en: 'Electricity', am: 'ኤሌክትሪክ' },
   'nav.water': { en: 'Water', am: 'ውሃ' },
   'nav.security': { en: 'Security', am: 'ጥበቃ' },
+  'nav.rent': { en: 'Rent Billing', am: 'የኪራይ ሂሳብ' },
   'nav.revenue': { en: 'Revenue', am: 'ገቢ' },
   'nav.users': { en: 'User Management', am: 'የተጠቃሚ አስተዳደር' },
   'nav.settings': { en: 'Settings', am: 'ቅንብሮች' },
