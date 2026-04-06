@@ -5,18 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Lock, Phone, Loader2, Save } from 'lucide-react';
+import { User, Lock, Phone, Loader2, Save, Eye, EyeOff, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TenantSettings = () => {
   const { profile, refreshProfile } = useAuth();
   const { t } = useLanguage();
   const [phone, setPhone] = useState(profile?.phone || '');
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [email, setEmail] = useState(profile?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +32,19 @@ const TenantSettings = () => {
     if (error) { toast.error(error.message); return; }
     toast.success(t('settings.profileUpdated'));
     refreshProfile();
+  };
+
+  const handleUpdateEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email === profile?.email) {
+      toast.info('Email is the same as current');
+      return;
+    }
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email });
+    setSavingEmail(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Confirmation email sent. Please check your inbox to verify the new email.');
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -46,7 +62,6 @@ const TenantSettings = () => {
     setSavingPassword(false);
     if (error) { toast.error(error.message); return; }
     toast.success(t('settings.passwordUpdated'));
-    setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
   };
@@ -69,10 +84,6 @@ const TenantSettings = () => {
               <Input value={profile?.full_name || ''} disabled className="mt-1 bg-muted" />
             </div>
             <div>
-              <label className="text-sm font-medium">{t('auth.email')}</label>
-              <Input value={profile?.email || ''} disabled className="mt-1 bg-muted" />
-            </div>
-            <div>
               <label className="text-sm font-medium">{t('tenant.phone')}</label>
               <Input
                 type="tel"
@@ -90,6 +101,34 @@ const TenantSettings = () => {
         </CardContent>
       </Card>
 
+      {/* Change Email */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-4 h-4" /> {t('auth.email')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateEmail} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">{t('auth.email')}</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="email@example.com"
+                className="mt-1"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={savingEmail} className="gap-2">
+              {savingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Update Email
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {/* Change Password */}
       <Card>
         <CardHeader>
@@ -101,27 +140,35 @@ const TenantSettings = () => {
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
               <label className="text-sm font-medium">{t('auth.newPassword')}</label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="••••••"
-                className="mt-1"
-                required
-                minLength={6}
-              />
+              <div className="relative mt-1">
+                <Input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••"
+                  required
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">{t('settings.confirmPassword')}</label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="••••••"
-                className="mt-1"
-                required
-                minLength={6}
-              />
+              <div className="relative mt-1">
+                <Input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••"
+                  required
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" disabled={savingPassword} className="gap-2">
               {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
