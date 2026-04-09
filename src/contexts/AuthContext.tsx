@@ -56,25 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (profileData) {
-      setProfile(profileData as Profile);
-    }
+    setProfileLoading(true);
+    try {
+      const [{ data: profileData }, { data: rolesData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', userId).single(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
+      ]);
 
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    if (rolesData) {
-      setRoles(rolesData.map((r: UserRole) => r.role));
+      if (profileData) setProfile(profileData as Profile);
+      if (rolesData) setRoles(rolesData.map((r: UserRole) => r.role));
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -83,20 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setRoles([]);
-        }
-        setLoading(false);
-      }
-    );
+    let initialLoad = true;
 
+    // getSession restores from storage — this is the primary init path
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -104,7 +88,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await fetchProfile(session.user.id);
       }
       setLoading(false);
+      initialLoad = false;
     });
+
+    // onAuthStateChange fires for subsequent events (sign-in/out)
+    // Do NOT await inside this callback — it can deadlock
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          // Fire and forget — profile loading is tracked separately
+          fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setRoles([]);
+        }
+        // Only set loading false here if getSession already finished
+        if (!initialLoad) {
+          setLoading(false);
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, []);
