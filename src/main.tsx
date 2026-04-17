@@ -6,7 +6,17 @@ import "./index.css";
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        // When a new SW takes control (after assets changed), reload once to get fresh bundles
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+        // Check for updates on each load
+        registration.update().catch(() => {});
+      }).catch(() => {
         // SW registration failed silently
       });
     });
