@@ -1,24 +1,19 @@
-const CACHE_NAME = 'as-apt-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
+const CACHE_NAME = 'as-apt-v3';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+  // Activate the new SW immediately, don't wait for old tabs to close
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    (async () => {
+      // Delete ALL old caches (any name that isn't current)
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -26,7 +21,10 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Never cache dev/build tool assets or browser extension requests
+  // Never intercept cross-origin or non-http(s) requests
+  if (url.origin !== self.location.origin) return;
+
+  // Never cache dev/build tool assets
   if (
     url.pathname.startsWith('/src/') ||
     url.pathname.startsWith('/node_modules/') ||
@@ -37,15 +35,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network first for API calls and HTML documents
-  if (event.request.mode === 'navigate' || event.request.url.includes('supabase.co')) {
+  // ALWAYS network-first for navigations and JS/CSS bundles to avoid stale-asset blank pages
+  const isNavigation = event.request.mode === 'navigate';
+  const isScriptOrStyle =
+    event.request.destination === 'script' ||
+    event.request.destination === 'style' ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.html');
+
+  if (isNavigation || isScriptOrStyle) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Cache first only for safe static assets
+  // Cache-first for safe static assets (images, fonts, etc.)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetched = fetch(event.request)
