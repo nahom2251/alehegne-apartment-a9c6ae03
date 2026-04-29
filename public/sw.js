@@ -1,4 +1,4 @@
-const CACHE_NAME = 'as-apt-v3';
+const CACHE_NAME = 'as-apt-v4';
 
 self.addEventListener('install', (event) => {
   // Activate the new SW immediately, don't wait for old tabs to close
