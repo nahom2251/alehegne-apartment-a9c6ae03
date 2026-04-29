@@ -66,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supabase.from('user_roles').select('role').eq('user_id', userId),
       ]);
 
-      if (profileData) setProfile(profileData as Profile);
-      if (rolesData) setRoles(rolesData.map((r: UserRole) => r.role));
+      setProfile(profileData ? (profileData as Profile) : null);
+      setRoles(rolesData ? rolesData.map((r: UserRole) => r.role) : []);
     } finally {
       setProfileLoading(false);
     }
@@ -80,13 +80,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let initialLoad = true;
 
-    // getSession restores from storage — this is the primary init path
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setRoles([]);
       }
+      setLoading(false);
+      initialLoad = false;
+    };
+
+    initializeAuth().catch(() => {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setRoles([]);
       setLoading(false);
       initialLoad = false;
     });
