@@ -1,4 +1,4 @@
-const CACHE_NAME = 'as-apt-v3';
+const CACHE_NAME = 'as-apt-v4';
 
 self.addEventListener('install', (event) => {
   // Activate the new SW immediately, don't wait for old tabs to close
@@ -44,7 +44,25 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.css') ||
     url.pathname.endsWith('.html');
 
-  if (isNavigation || isScriptOrStyle) {
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          // Cache the latest index for offline fallback
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
+          return res;
+        })
+        .catch(async () => {
+          // Offline / server error: always return cached index.html so the SPA can boot
+          const cached = await caches.match('/index.html');
+          return cached || caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  if (isScriptOrStyle) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
