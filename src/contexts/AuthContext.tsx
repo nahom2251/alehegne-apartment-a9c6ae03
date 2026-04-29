@@ -10,6 +10,7 @@ interface Profile {
   phone?: string;
   status: 'pending' | 'approved' | 'rejected';
   language: string;
+  must_change_password?: boolean;
 }
 
 interface UserRole {
@@ -26,6 +27,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isTenant: boolean;
   isApproved: boolean;
+  mustChangePassword: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -42,6 +44,7 @@ const fallbackAuthContext: AuthContextType = {
   isAdmin: false,
   isTenant: false,
   isApproved: false,
+  mustChangePassword: false,
   signIn: async () => ({ error: new Error('Auth provider not ready') }),
   signUp: async () => ({ error: new Error('Auth provider not ready') }),
   signOut: async () => {},
@@ -153,11 +156,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = isSuperAdmin || roles.includes('admin');
   const isTenant = roles.includes('tenant');
   const isApproved = profile?.status === 'approved';
+  const mustChangePassword = !!profile?.must_change_password;
 
   return (
     <AuthContext.Provider value={{
       user, session, profile, roles, loading: loading || profileLoading,
-      isSuperAdmin, isAdmin, isTenant, isApproved,
+      isSuperAdmin, isAdmin, isTenant, isApproved, mustChangePassword,
       signIn, signUp, signOut, refreshProfile,
     }}>
       {children}
