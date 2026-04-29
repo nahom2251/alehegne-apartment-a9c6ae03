@@ -94,6 +94,15 @@ const PendingApprovalRoute = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
+const TenantChangePasswordRoute = () => {
+  const { user, loading, isTenant, mustChangePassword } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/tenant-login" replace />;
+  if (!isTenant) return <Navigate to="/" replace />;
+  if (!mustChangePassword) return <Navigate to="/tenant" replace />;
+  return <ChangePassword />;
+};
+
 const AuthenticatedApp = () => {
   return (
     <Routes>
