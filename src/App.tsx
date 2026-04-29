@@ -28,6 +28,7 @@ import TenantPayment from "@/pages/TenantPayment";
 import TenantHistory from "@/pages/TenantHistory";
 import TenantSettings from "@/pages/TenantSettings";
 import ResetPassword from "@/pages/ResetPassword";
+import ChangePassword from "@/pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -38,20 +39,22 @@ const LoadingScreen = () => (
 );
 
 const AuthRedirect = () => {
-  const { user, profile, loading, isApproved, isTenant } = useAuth();
+  const { user, profile, loading, isApproved, isTenant, mustChangePassword } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isTenant && mustChangePassword) return <Navigate to="/tenant/change-password" replace />;
   if (isTenant && isApproved) return <Navigate to="/tenant" replace />;
   if (!isApproved && profile && !isTenant) return <Navigate to="/pending-approval" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
 const PublicOnlyRoute = ({ children }: { children: ReactNode }) => {
-  const { user, profile, loading, isApproved, isTenant } = useAuth();
+  const { user, profile, loading, isApproved, isTenant, mustChangePassword } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <>{children}</>;
+  if (isTenant && mustChangePassword) return <Navigate to="/tenant/change-password" replace />;
   if (isTenant && isApproved) return <Navigate to="/tenant" replace />;
   if (!isApproved && profile && !isTenant) return <Navigate to="/pending-approval" replace />;
   return <Navigate to="/dashboard" replace />;
@@ -68,7 +71,7 @@ const AdminRoute = () => {
 };
 
 const TenantRoute = () => {
-  const { user, profile, loading, isApproved, isTenant } = useAuth();
+  const { user, profile, loading, isApproved, isTenant, mustChangePassword } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/tenant-login" replace />;
@@ -77,6 +80,7 @@ const TenantRoute = () => {
     return <Navigate to="/dashboard" replace />;
   }
   if (!isApproved) return <Navigate to="/tenant-login" replace />;
+  if (mustChangePassword) return <Navigate to="/tenant/change-password" replace />;
   return <Outlet />;
 };
 
@@ -99,6 +103,7 @@ const AuthenticatedApp = () => {
       <Route path="/tenant-login" element={<PublicOnlyRoute><TenantAuth /></PublicOnlyRoute>} />
       <Route path="/reset-password" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
       <Route path="/pending-approval" element={<PendingApprovalRoute />} />
+      <Route path="/tenant/change-password" element={<TenantChangePasswordRoute />} />
 
       <Route element={<AdminRoute />}>
         <Route element={<AppLayout />}>
