@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import Logo from '@/components/Logo';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -192,8 +193,8 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-border">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 rounded-xl gold-gradient flex items-center justify-center mb-4 shadow-md">
-              <Building2 className="w-8 h-8 text-card" />
+            <div className="mx-auto mb-4">
+              <Logo size={72} />
             </div>
             <CardTitle className="text-xl font-bold">{getTitle()}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{getSubtitle()}</p>
