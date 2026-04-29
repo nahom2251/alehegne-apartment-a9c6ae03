@@ -41,7 +41,7 @@ const AuthRedirect = () => {
   const { user, profile, loading, isApproved, isTenant } = useAuth();
 
   if (loading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (isTenant && isApproved) return <Navigate to="/tenant" replace />;
   if (!isApproved && profile && !isTenant) return <Navigate to="/pending-approval" replace />;
   return <Navigate to="/dashboard" replace />;
@@ -61,7 +61,7 @@ const AdminRoute = () => {
   const { user, profile, loading, isApproved, isTenant } = useAuth();
 
   if (loading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/admin" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (isTenant && isApproved) return <Navigate to="/tenant" replace />;
   if (!isApproved && profile && !isTenant) return <Navigate to="/pending-approval" replace />;
   return <Outlet />;
@@ -84,7 +84,7 @@ const PendingApprovalRoute = () => {
   const { user, profile, loading, isApproved, isTenant } = useAuth();
 
   if (loading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/admin" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (isTenant && isApproved) return <Navigate to="/tenant" replace />;
   if (!isApproved && profile && !isTenant) return <PendingApproval />;
   return <Navigate to="/dashboard" replace />;
@@ -94,7 +94,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<AuthRedirect />} />
-      <Route path="/login" element={<Navigate to="/admin" replace />} />
+      <Route path="/login" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
       <Route path="/admin" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
       <Route path="/tenant-login" element={<PublicOnlyRoute><TenantAuth /></PublicOnlyRoute>} />
       <Route path="/reset-password" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
