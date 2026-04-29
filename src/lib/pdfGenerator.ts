@@ -24,6 +24,154 @@ const PAYMENT_CONFIG = {
   },
 };
 
+interface CombinedReceiptItem {
+  billType: 'Rent' | 'Electricity' | 'Water' | 'Security';
+  month: string;
+  year: number;
+  amount: number;
+  paidAt?: string;
+}
+
+interface CombinedReceiptData {
+  tenantName: string;
+  unitLabel: string;
+  items: CombinedReceiptItem[];
+}
+
+export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // Header
+  doc.setFillColor(212, 175, 55);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AS Apt.', pageWidth / 2, 18, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Alehegne Sewnet Apartment', pageWidth / 2, 28, { align: 'center' });
+
+  // Title
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TOTAL PAYMENT RECEIPT', pageWidth / 2, 55, { align: 'center' });
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 20, 55, { align: 'right' });
+
+  // Tenant info box
+  let y = 68;
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(15, y - 5, pageWidth - 30, 24, 3, 3);
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Tenant:', 20, y + 4);
+  doc.text('Unit:', 20, y + 13);
+  doc.setFont('helvetica', 'normal');
+  doc.text(data.tenantName, 55, y + 4);
+  doc.text(data.unitLabel, 55, y + 13);
+
+  // Table header
+  y = 102;
+  doc.setFillColor(245, 245, 245);
+  doc.rect(15, y, pageWidth - 30, 10, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(10);
+  doc.text('Type', 20, y + 7);
+  doc.text('Period', 70, y + 7);
+  doc.text('Date Paid', 120, y + 7);
+  doc.text('Amount (Birr)', pageWidth - 20, y + 7, { align: 'right' });
+
+  // Rows grouped by type
+  const order: CombinedReceiptItem['billType'][] = ['Rent', 'Electricity', 'Water', 'Security'];
+  let total = 0;
+  const subtotals: Record<string, number> = { Rent: 0, Electricity: 0, Water: 0, Security: 0 };
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(9);
+
+  order.forEach((type) => {
+    const items = data.items.filter((i) => i.billType === type);
+    if (items.length === 0) return;
+    items.forEach((item) => {
+      y += 9;
+      if (y > pageHeight - 60) {
+        doc.addPage();
+        y = 30;
+      }
+      doc.text(item.billType, 20, y);
+      doc.text(`${item.month} ${item.year}`, 70, y);
+      doc.text(item.paidAt ? new Date(item.paidAt).toLocaleDateString() : '-', 120, y);
+      doc.text(item.amount.toLocaleString(), pageWidth - 20, y, { align: 'right' });
+      subtotals[type] += item.amount;
+      total += item.amount;
+    });
+  });
+
+  // Subtotals
+  y += 10;
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(15, y, pageWidth - 15, y);
+  y += 8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Subtotals', 20, y);
+  order.forEach((type) => {
+    if (subtotals[type] > 0) {
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text(type, 25, y);
+      doc.text(`${subtotals[type].toLocaleString()} Birr`, pageWidth - 20, y, { align: 'right' });
+    }
+  });
+
+  // Grand total
+  y += 12;
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(1);
+  doc.line(15, y, pageWidth - 15, y);
+  y += 10;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(50, 50, 50);
+  doc.text('GRAND TOTAL', 20, y);
+  doc.text(`${total.toLocaleString()} Birr`, pageWidth - 20, y, { align: 'right' });
+
+  // PAID stamp
+  doc.saveGraphicsState();
+  doc.setTextColor(34, 139, 34);
+  doc.setFontSize(60);
+  doc.setFont('helvetica', 'bold');
+  const gState = (doc as any).GState({ opacity: 0.12 });
+  doc.setGState(gState);
+  doc.text('PAID', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
+  doc.restoreGraphicsState();
+
+  // Footer
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.5);
+  doc.line(15, pageHeight - 20, pageWidth - 15, pageHeight - 20);
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Powered by NUN Tech', pageWidth / 2, pageHeight - 12, { align: 'center' });
+
+  doc.save(`Total_Receipt_${data.unitLabel}_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
 export const generateBillPdf = (bill: BillData) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
