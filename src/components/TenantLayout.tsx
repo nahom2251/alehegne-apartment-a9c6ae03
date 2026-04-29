@@ -4,7 +4,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Building2, LayoutDashboard, Receipt, Upload, History, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Receipt, Upload, History, Settings, LogOut } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const TenantLayout = () => {
   const { signOut, profile } = useAuth();
@@ -24,9 +25,7 @@ const TenantLayout = () => {
       {/* Header */}
       <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card sticky top-0 z-10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-card" />
-          </div>
+          <Logo size={32} />
           <span className="text-sm font-semibold">{t('app.short')}</span>
         </div>
         <div className="flex items-center gap-2">
