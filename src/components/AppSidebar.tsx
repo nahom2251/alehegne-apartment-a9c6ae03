@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import Logo from '@/components/Logo';
 
 const AppSidebar = () => {
   const { state, toggleSidebar } = useSidebar();
@@ -59,9 +60,7 @@ const AppSidebar = () => {
             <div className="flex items-center justify-between w-full">
               {!collapsed && (
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-card" />
-                  </div>
+                  <Logo size={32} />
                   <span className="font-bold text-sm text-sidebar-foreground">AS Apt.</span>
                 </div>
               )}

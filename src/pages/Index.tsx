@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import { Button } from '@/components/ui/button';
-import { Building2, Shield, Home } from 'lucide-react';
+import { Shield, Home } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,8 +17,8 @@ const Index = () => {
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8">
         <div className="text-center">
-          <div className="mx-auto w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center mb-6 shadow-lg">
-            <Building2 className="w-10 h-10 text-card" />
+          <div className="mx-auto mb-6 drop-shadow-lg">
+            <Logo size={96} />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('app.name')}</h1>
           <p className="text-lg font-semibold gold-text-gradient mt-1">{t('app.short')}</p>

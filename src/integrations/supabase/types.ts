@@ -190,6 +190,7 @@ export type Database = {
           full_name: string
           id: string
           language: string
+          must_change_password: boolean
           phone: string | null
           status: Database["public"]["Enums"]["approval_status"]
           updated_at: string
@@ -201,6 +202,7 @@ export type Database = {
           full_name: string
           id?: string
           language?: string
+          must_change_password?: boolean
           phone?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
           updated_at?: string
@@ -212,6 +214,7 @@ export type Database = {
           full_name?: string
           id?: string
           language?: string
+          must_change_password?: boolean
           phone?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
           updated_at?: string
@@ -406,6 +409,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clear_must_change_password: { Args: never; Returns: undefined }
       get_available_apartments: {
         Args: never
         Returns: {
@@ -429,6 +433,10 @@ export type Database = {
           apartment_label: string
           tenant_name: string
         }[]
+      }
+      mark_must_change_password: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       register_tenant: {
         Args: { _apartment_id: string; _phone: string }

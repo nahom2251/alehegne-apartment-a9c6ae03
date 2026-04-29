@@ -5,13 +5,46 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Building2, Eye, EyeOff, Loader2, ArrowLeft, Search, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Search, CheckCircle, Copy, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import Logo from '@/components/Logo';
+
+type View = 'login' | 'register' | 'forgot' | 'credentials';
+
+interface FoundApartment {
+  apartment_id: string;
+  apartment_label: string;
+  tenant_name: string;
+}
+
+interface GeneratedCreds {
+  email: string;
+  password: string;
+}
+
+// Build a sane username from full name. Fallback to 'tenant' if empty.
+const buildUsername = (fullName: string): string => {
+  const cleaned = (fullName || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (cleaned.length === 0) return 'tenant';
+  return cleaned[0];
+};
+
+const generatePassword = (): string => {
+  // 6-digit numeric password
+  return String(Math.floor(100000 + Math.random() * 900000));
+};
 
 const TenantAuth = () => {
-  const [view, setView] = useState<'login' | 'register' | 'forgot'>('login');
+  const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -23,10 +56,12 @@ const TenantAuth = () => {
 
   // Phone lookup state
   const [lookupLoading, setLookupLoading] = useState(false);
-  const [foundApartment, setFoundApartment] = useState<{ apartment_id: string; apartment_label: string; tenant_name: string } | null>(null);
+  const [foundApartment, setFoundApartment] = useState<FoundApartment | null>(null);
   const [phoneLookedUp, setPhoneLookedUp] = useState(false);
 
-  // Load remembered email
+  // Generated credentials shown after successful registration
+  const [creds, setCreds] = useState<GeneratedCreds | null>(null);
+
   useEffect(() => {
     const remembered = localStorage.getItem('tenant_remember') === 'true';
     const savedEmail = localStorage.getItem('tenant_email');
@@ -48,7 +83,7 @@ const TenantAuth = () => {
 
     if (error) { toast.error(error.message); return; }
     if (data && data.length > 0) {
-      setFoundApartment(data[0]);
+      setFoundApartment(data[0] as FoundApartment);
     } else {
       toast.error(t('tenant.phoneNotFound'));
     }
@@ -60,6 +95,7 @@ const TenantAuth = () => {
     setPhoneLookedUp(false);
     setEmail('');
     setPassword('');
+    setCreds(null);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -75,42 +111,98 @@ const TenantAuth = () => {
     setView('login');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAutoRegister = async () => {
+    if (!foundApartment) { toast.error(t('tenant.lookupFirst')); return; }
     setSubmitting(true);
 
-    if (view === 'login') {
-      if (rememberMe) {
-        localStorage.setItem('tenant_email', email);
-        localStorage.setItem('tenant_remember', 'true');
-      } else {
-        localStorage.removeItem('tenant_email');
-        localStorage.removeItem('tenant_remember');
-      }
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) toast.error(error.message);
-    } else if (view === 'register') {
-      if (!foundApartment) { toast.error(t('tenant.lookupFirst')); setSubmitting(false); return; }
+    const baseUsername = buildUsername(foundApartment.tenant_name);
+    const generatedPassword = generatePassword();
+    let finalEmail = `${baseUsername}@asapartment.com`;
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email, password,
+    // Try signup, on duplicate retry with a numeric suffix
+    let signUpUser = null;
+    let lastError: { message: string } | null = null;
+    for (let i = 0; i < 5; i++) {
+      const tryEmail = i === 0 ? finalEmail : `${baseUsername}${i + 1}@asapartment.com`;
+      const { data, error } = await supabase.auth.signUp({
+        email: tryEmail,
+        password: generatedPassword,
         options: {
           data: { full_name: foundApartment.tenant_name || 'Tenant' },
           emailRedirectTo: window.location.origin,
         },
       });
-      if (signUpError) { toast.error(signUpError.message); setSubmitting(false); return; }
-
-      if (signUpData.user) {
-        const { error: regError } = await supabase.rpc('register_tenant', {
-          _apartment_id: foundApartment.apartment_id,
-          _phone: phone,
-        });
-        if (regError) toast.error(regError.message);
-        else { toast.success(t('tenant.accountCreated')); resetRegisterForm(); setView('login'); }
+      if (!error && data.user) {
+        signUpUser = data.user;
+        finalEmail = tryEmail;
+        lastError = null;
+        break;
+      }
+      lastError = error;
+      const msg = error?.message?.toLowerCase() ?? '';
+      if (!msg.includes('already') && !msg.includes('registered') && !msg.includes('exists')) {
+        break; // not a uniqueness issue — bail out
       }
     }
+
+    if (!signUpUser) {
+      setSubmitting(false);
+      toast.error(lastError?.message || 'Could not create account');
+      return;
+    }
+
+    // Link tenant to apartment & approve
+    const { error: regError } = await supabase.rpc('register_tenant', {
+      _apartment_id: foundApartment.apartment_id,
+      _phone: phone,
+    });
+    if (regError) {
+      setSubmitting(false);
+      toast.error(regError.message);
+      return;
+    }
+
+    // Force password change on first login
+    const { error: flagError } = await supabase.rpc('mark_must_change_password', {
+      _user_id: signUpUser.id,
+    });
+    if (flagError) {
+      // non-fatal — log but continue
+      console.warn('mark_must_change_password failed', flagError);
+    }
+
+    // Sign the just-created user out so they have to use the new credentials
+    await supabase.auth.signOut();
+
     setSubmitting(false);
+    setCreds({ email: finalEmail, password: generatedPassword });
+    setView('credentials');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    if (rememberMe) {
+      localStorage.setItem('tenant_email', email);
+      localStorage.setItem('tenant_remember', 'true');
+    } else {
+      localStorage.removeItem('tenant_email');
+      localStorage.removeItem('tenant_remember');
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error(error.message);
+    setSubmitting(false);
+  };
+
+  const copyCreds = async () => {
+    if (!creds) return;
+    const text = `Username: ${creds.email}\nPassword: ${creds.password}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Credentials copied');
+    } catch {
+      toast.error('Could not copy to clipboard');
+    }
   };
 
   const renderForgotForm = () => (
@@ -156,7 +248,7 @@ const TenantAuth = () => {
         </div>
       </div>
 
-      {/* Step 2: Show found info */}
+      {/* Step 2: Found tenant info */}
       {foundApartment && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
           <div className="flex items-center gap-2 text-primary">
@@ -180,33 +272,70 @@ const TenantAuth = () => {
         <p className="text-sm text-destructive text-center">{t('tenant.phoneNotFound')}</p>
       )}
 
-      {/* Step 3: Email & password (only after successful lookup) */}
+      {/* Step 3: Auto-create account */}
       {foundApartment && (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
-            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
-            <div className="relative mt-1">
-              <Input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.password')} required minLength={6} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {t('auth.registerBtn')}
-          </Button>
-        </form>
+        <Button
+          type="button"
+          onClick={handleAutoRegister}
+          className="w-full gold-gradient text-card font-semibold"
+          disabled={submitting}
+        >
+          {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Create Account
+        </Button>
       )}
+
+      <p className="text-xs text-muted-foreground text-center">
+        We'll auto-generate a username and a 6-digit password for you. You'll be asked to change the password on first login.
+      </p>
+    </div>
+  );
+
+  const renderCredentials = () => (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 space-y-3">
+        <div className="flex items-center gap-2 text-primary">
+          <KeyRound className="w-4 h-4" />
+          <span className="text-sm font-semibold">Your login credentials</span>
+        </div>
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Username</p>
+            <p className="font-mono text-sm font-semibold text-foreground break-all">{creds?.email}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Password</p>
+            <p className="font-mono text-lg font-bold text-foreground tracking-widest">{creds?.password}</p>
+          </div>
+        </div>
+        <Button type="button" onClick={copyCreds} variant="outline" size="sm" className="w-full gap-2">
+          <Copy className="w-3.5 h-3.5" /> Copy credentials
+        </Button>
+      </div>
+
+      <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3">
+        <p className="text-xs text-foreground">
+          ⚠️ Save these credentials now — you'll need them to log in. You'll be asked to set a new password on first login.
+        </p>
+      </div>
+
+      <Button
+        type="button"
+        onClick={() => {
+          setEmail(creds?.email ?? '');
+          setPassword('');
+          resetRegisterForm();
+          setView('login');
+        }}
+        className="w-full gold-gradient text-card font-semibold"
+      >
+        Continue to Login
+      </Button>
     </div>
   );
 
   const renderLoginForm = () => (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleLogin} className="space-y-4">
       <div>
         <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
         <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
@@ -236,6 +365,19 @@ const TenantAuth = () => {
     </form>
   );
 
+  const getTitle = () => {
+    if (view === 'forgot') return t('auth.forgotPassword');
+    if (view === 'credentials') return 'Account Created';
+    if (view === 'login') return t('tenant.login');
+    return t('tenant.register');
+  };
+
+  const getSubtitle = () => {
+    if (view === 'forgot') return t('auth.forgotPasswordMsg');
+    if (view === 'credentials') return 'Save your login credentials';
+    return t('tenant.portal');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -245,22 +387,19 @@ const TenantAuth = () => {
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-border">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 rounded-xl gold-gradient flex items-center justify-center mb-4 shadow-md">
-              <Building2 className="w-8 h-8 text-card" />
+            <div className="mx-auto mb-4">
+              <Logo size={72} />
             </div>
-            <CardTitle className="text-xl font-bold">
-              {view === 'forgot' ? t('auth.forgotPassword') : view === 'login' ? t('tenant.login') : t('tenant.register')}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {view === 'forgot' ? t('auth.forgotPasswordMsg') : t('tenant.portal')}
-            </p>
+            <CardTitle className="text-xl font-bold">{getTitle()}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{getSubtitle()}</p>
           </CardHeader>
           <CardContent>
             {view === 'forgot' && renderForgotForm()}
             {view === 'login' && renderLoginForm()}
             {view === 'register' && renderRegisterForm()}
+            {view === 'credentials' && renderCredentials()}
 
-            {view !== 'forgot' && (
+            {(view === 'login' || view === 'register') && (
               <div className="mt-4 text-center">
                 <button onClick={() => { resetRegisterForm(); setView(view === 'login' ? 'register' : 'login'); }} className="text-sm text-primary hover:underline">
                   {view === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
