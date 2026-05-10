@@ -363,6 +363,66 @@ export type Database = {
         }
         Relationships: []
       }
+      utility_invoices: {
+        Row: {
+          apartment_id: string
+          created_at: string
+          electricity_amount: number
+          electricity_bill_id: string | null
+          id: string
+          month: number
+          notes: string | null
+          paid_at: string | null
+          security_amount: number
+          security_bill_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["utility_invoice_status"]
+          total: number
+          updated_at: string
+          water_amount: number
+          water_bill_id: string | null
+          year: number
+        }
+        Insert: {
+          apartment_id: string
+          created_at?: string
+          electricity_amount?: number
+          electricity_bill_id?: string | null
+          id?: string
+          month: number
+          notes?: string | null
+          paid_at?: string | null
+          security_amount?: number
+          security_bill_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["utility_invoice_status"]
+          total?: number
+          updated_at?: string
+          water_amount?: number
+          water_bill_id?: string | null
+          year: number
+        }
+        Update: {
+          apartment_id?: string
+          created_at?: string
+          electricity_amount?: number
+          electricity_bill_id?: string | null
+          id?: string
+          month?: number
+          notes?: string | null
+          paid_at?: string | null
+          security_amount?: number
+          security_bill_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["utility_invoice_status"]
+          total?: number
+          updated_at?: string
+          water_amount?: number
+          water_bill_id?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       water_bills: {
         Row: {
           amount: number
@@ -446,6 +506,7 @@ export type Database = {
     Enums: {
       app_role: "super_admin" | "admin" | "user" | "tenant"
       approval_status: "pending" | "approved" | "rejected"
+      utility_invoice_status: "draft" | "sent" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -575,6 +636,7 @@ export const Constants = {
     Enums: {
       app_role: ["super_admin", "admin", "user", "tenant"],
       approval_status: ["pending", "approved", "rejected"],
+      utility_invoice_status: ["draft", "sent", "paid"],
     },
   },
 } as const

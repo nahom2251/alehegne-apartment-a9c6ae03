@@ -13,7 +13,7 @@ export interface Notification {
 }
 
 export const useNotifications = () => {
-  const { user, isAdmin, isSuperAdmin, isTenant, isApproved } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isApproved } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const fetchNotifications = useCallback(async () => {
@@ -119,107 +119,10 @@ export const useNotifications = () => {
           });
         }
       }
-    } else if (isTenant) {
-      // --- TENANT notifications: only their own data ---
-
-      // Get tenant's apartment
-      const { data: apt } = await supabase
-        .from('apartments')
-        .select('*')
-        .eq('tenant_user_id', user.id)
-        .single();
-
-      if (apt) {
-        // Rent status
-        if (apt.move_in_date && apt.monthly_rent) {
-          const moveIn = parseISO(apt.move_in_date);
-          const paidUntil = addMonths(moveIn, apt.rent_paid_months || 0);
-          const daysLeft = differenceInDays(paidUntil, new Date());
-
-          if (daysLeft < 0) {
-            items.push({
-              id: `overdue-${apt.id}`,
-              type: 'overdue',
-              title: `🔴 Rent Overdue`,
-              message: `Your rent is ${Math.abs(daysLeft)} days overdue`,
-              timestamp: new Date(),
-              read: false,
-            });
-          } else if (daysLeft <= 5) {
-            items.push({
-              id: `near-${apt.id}`,
-              type: 'near_due',
-              title: `🟡 Rent Due Soon`,
-              message: `Your rent is due in ${daysLeft} days`,
-              timestamp: new Date(),
-              read: false,
-            });
-          }
-        }
-
-        // Tenant's unpaid electricity bills
-        const { data: elecBills } = await supabase
-          .from('electricity_bills')
-          .select('*')
-          .eq('apartment_id', apt.id)
-          .eq('is_paid', false);
-        if (elecBills) {
-          elecBills.forEach(bill => {
-            items.push({
-              id: `elec-${bill.id}`,
-              type: 'pending_bill',
-              title: `⚡ Unpaid Electricity Bill`,
-              message: `${bill.total?.toLocaleString()} Birr`,
-              timestamp: new Date(bill.created_at),
-              read: false,
-            });
-          });
-        }
-
-        // Tenant's unpaid water bills
-        const { data: waterBills } = await supabase
-          .from('water_bills')
-          .select('*')
-          .eq('apartment_id', apt.id)
-          .eq('is_paid', false);
-        if (waterBills) {
-          waterBills.forEach(bill => {
-            items.push({
-              id: `water-${bill.id}`,
-              type: 'pending_bill',
-              title: `💧 Unpaid Water Bill`,
-              message: `${bill.amount?.toLocaleString()} Birr`,
-              timestamp: new Date(bill.created_at),
-              read: false,
-            });
-          });
-        }
-      }
-
-      // Tenant's reviewed payment proofs (approved/rejected)
-      const { data: reviewedProofs } = await supabase
-        .from('payment_proofs')
-        .select('*')
-        .eq('tenant_user_id', user.id)
-        .in('status', ['approved', 'rejected'])
-        .order('reviewed_at', { ascending: false })
-        .limit(10);
-      if (reviewedProofs) {
-        reviewedProofs.forEach(proof => {
-          items.push({
-            id: `proof-${proof.id}`,
-            type: 'payment_status',
-            title: proof.status === 'approved' ? `✅ Payment Approved` : `❌ Payment Rejected`,
-            message: `Your ${proof.bill_type} payment proof was ${proof.status}${proof.notes ? ': ' + proof.notes : ''}`,
-            timestamp: new Date(proof.reviewed_at || proof.created_at),
-            read: false,
-          });
-        });
-      }
     }
 
     setNotifications(items);
-  }, [user, isAdmin, isSuperAdmin, isTenant, isApproved]);
+  }, [user, isAdmin, isSuperAdmin, isApproved]);
 
   useEffect(() => {
     fetchNotifications();
