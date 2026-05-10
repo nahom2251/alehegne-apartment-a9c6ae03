@@ -58,7 +58,7 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL PAYMENT RECEIPT', pageWidth / 2, 55, { align: 'center' });
+  doc.text('UTILITIES PAYMENT RECEIPT', pageWidth / 2, 55, { align: 'center' });
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -169,7 +169,7 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setFont('helvetica', 'normal');
   doc.text('Powered by NUN Tech', pageWidth / 2, pageHeight - 12, { align: 'center' });
 
-  doc.save(`Total_Receipt_${data.unitLabel}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`Utilities_Receipt_${data.unitLabel}_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const generateBillPdf = (bill: BillData) => {
