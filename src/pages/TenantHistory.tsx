@@ -6,9 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { Receipt, CheckCircle, Clock, XCircle, Download } from 'lucide-react';
-import { generateCombinedReceiptPdf } from '@/lib/pdfGenerator';
-import { toast } from 'sonner';
+import { Receipt, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -18,9 +16,6 @@ const TenantHistory = () => {
   const [proofs, setProofs] = useState<any[]>([]);
   const [rentPayments, setRentPayments] = useState<any[]>([]);
   const [apartment, setApartment] = useState<any>(null);
-  const [elecPaid, setElecPaid] = useState<any[]>([]);
-  const [waterPaid, setWaterPaid] = useState<any[]>([]);
-  const [securityPaid, setSecurityPaid] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -46,27 +41,6 @@ const TenantHistory = () => {
           .eq('apartment_id', apt.id)
           .order('payment_date', { ascending: false });
         if (rentData) setRentPayments(rentData);
-
-        const { data: elec } = await supabase
-          .from('electricity_bills')
-          .select('*')
-          .eq('apartment_id', apt.id)
-          .eq('is_paid', true);
-        if (elec) setElecPaid(elec);
-
-        const { data: water } = await supabase
-          .from('water_bills')
-          .select('*')
-          .eq('apartment_id', apt.id)
-          .eq('is_paid', true);
-        if (water) setWaterPaid(water);
-
-        const { data: sec } = await supabase
-          .from('security_bills')
-          .select('*')
-          .eq('apartment_id', apt.id)
-          .eq('is_paid', true);
-        if (sec) setSecurityPaid(sec);
       }
     };
     fetchData();
@@ -88,39 +62,9 @@ const TenantHistory = () => {
     }
   };
 
-  const handleDownloadTotalReceipt = () => {
-    if (!apartment) return;
-    const items: Array<{ billType: 'Rent' | 'Electricity' | 'Water' | 'Security'; month: string; year: number; amount: number; paidAt?: string }> = [];
-
-    elecPaid.forEach((b) => items.push({ billType: 'Electricity', month: monthNames[b.month - 1], year: b.year, amount: Number(b.total) || 0, paidAt: b.paid_at }));
-    waterPaid.forEach((b) => items.push({ billType: 'Water', month: monthNames[b.month - 1], year: b.year, amount: Number(b.amount) || 0, paidAt: b.paid_at }));
-    securityPaid.forEach((b) => items.push({ billType: 'Security', month: monthNames[b.month - 1], year: b.year, amount: Number(b.amount) || 0, paidAt: b.paid_at }));
-
-    if (items.length === 0) {
-      toast.error('No paid utility bills to include in receipt');
-      return;
-    }
-
-    generateCombinedReceiptPdf({
-      tenantName: apartment.tenant_name || 'Tenant',
-      unitLabel: apartment.label || '-',
-      items,
-    });
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{t('tenant.history')}</h1>
-        <Button
-          onClick={handleDownloadTotalReceipt}
-          size="sm"
-          className="gold-gradient text-card font-semibold"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Utilities Receipt
-        </Button>
-      </div>
+      <h1 className="text-2xl font-bold">{t('tenant.history')}</h1>
 
       {/* Rent Payments */}
       {rentPayments.length > 0 && (
