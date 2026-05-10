@@ -92,16 +92,12 @@ const TenantHistory = () => {
     if (!apartment) return;
     const items: Array<{ billType: 'Rent' | 'Electricity' | 'Water' | 'Security'; month: string; year: number; amount: number; paidAt?: string }> = [];
 
-    rentPayments.forEach((p) => {
-      const d = new Date(p.payment_date);
-      items.push({ billType: 'Rent', month: monthNames[d.getMonth()], year: d.getFullYear(), amount: Number(p.amount) || 0, paidAt: p.payment_date });
-    });
     elecPaid.forEach((b) => items.push({ billType: 'Electricity', month: monthNames[b.month - 1], year: b.year, amount: Number(b.total) || 0, paidAt: b.paid_at }));
     waterPaid.forEach((b) => items.push({ billType: 'Water', month: monthNames[b.month - 1], year: b.year, amount: Number(b.amount) || 0, paidAt: b.paid_at }));
     securityPaid.forEach((b) => items.push({ billType: 'Security', month: monthNames[b.month - 1], year: b.year, amount: Number(b.amount) || 0, paidAt: b.paid_at }));
 
     if (items.length === 0) {
-      toast.error('No paid items to include in receipt');
+      toast.error('No paid utility bills to include in receipt');
       return;
     }
 
@@ -122,7 +118,7 @@ const TenantHistory = () => {
           className="gold-gradient text-card font-semibold"
         >
           <Download className="w-4 h-4 mr-2" />
-          Total Receipt
+          Utilities Receipt
         </Button>
       </div>
 
