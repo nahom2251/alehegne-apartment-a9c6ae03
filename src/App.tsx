@@ -20,6 +20,7 @@ import WaterBills from "@/pages/WaterBills";
 import SecurityBills from "@/pages/SecurityBills";
 import RentBilling from "@/pages/RentBilling";
 import Revenue from "@/pages/Revenue";
+import UtilitiesReceipts from "@/pages/UtilitiesReceipts";
 import UserManagement from "@/pages/UserManagement";
 import PaymentReview from "@/pages/PaymentReview";
 import TenantDashboard from "@/pages/TenantDashboard";
@@ -123,6 +124,7 @@ const AuthenticatedApp = () => {
           <Route path="/security" element={<SecurityBills />} />
           <Route path="/rent" element={<RentBilling />} />
           <Route path="/revenue" element={<Revenue />} />
+          <Route path="/utilities-receipts" element={<UtilitiesReceipts />} />
           <Route path="/payments" element={<PaymentReview />} />
           <Route path="/users" element={<UserManagement />} />
         </Route>
