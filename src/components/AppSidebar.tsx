@@ -45,6 +45,7 @@ const AppSidebar = () => {
     { title: t('nav.security'), url: '/security', icon: ShieldCheck },
     { title: t('nav.rent'), url: '/rent', icon: Home },
     { title: t('nav.revenue'), url: '/revenue', icon: DollarSign },
+    { title: 'Utilities Receipts', url: '/utilities-receipts', icon: Receipt },
     { title: t('nav.paymentReview'), url: '/payments', icon: Receipt },
   ];
 
