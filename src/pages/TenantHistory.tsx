@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { Receipt, CheckCircle, Clock, XCircle } from 'lucide-react';
 
