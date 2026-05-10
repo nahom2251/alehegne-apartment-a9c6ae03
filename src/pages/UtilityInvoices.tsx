@@ -343,8 +343,7 @@ const UtilityInvoices = () => {
 
           {editing && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              Editing invoice from {new Date(editing.id ? '' : '').toString() ? '' : ''}
-              {statusBadge(editing.status)}
+              Editing existing invoice {statusBadge(editing.status)}
             </div>
           )}
 
