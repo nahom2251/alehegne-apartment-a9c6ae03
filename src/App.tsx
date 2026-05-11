@@ -19,7 +19,7 @@ import RentBilling from "@/pages/RentBilling";
 import Revenue from "@/pages/Revenue";
 import UtilityInvoices from "@/pages/UtilityInvoices";
 import UserManagement from "@/pages/UserManagement";
-import PaymentReview from "@/pages/PaymentReview";
+import TenantPayments from "@/pages/TenantPayments";
 import ResetPassword from "@/pages/ResetPassword";
 
 const queryClient = new QueryClient();
@@ -94,7 +94,7 @@ const AuthenticatedApp = () => {
           <Route path="/rent" element={<RentBilling />} />
           <Route path="/revenue" element={<Revenue />} />
           <Route path="/utility-invoices" element={<UtilityInvoices />} />
-          <Route path="/payments" element={<PaymentReview />} />
+          <Route path="/tenant-payments" element={<TenantPayments />} />
           <Route path="/users" element={<UserManagement />} />
         </Route>
       </Route>
