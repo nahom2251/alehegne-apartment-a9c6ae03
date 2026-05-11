@@ -36,6 +36,7 @@ interface CombinedReceiptData {
   tenantName: string;
   unitLabel: string;
   items: CombinedReceiptItem[];
+  isPaid?: boolean;
 }
 
 export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
@@ -67,7 +68,7 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('UTILITIES PAYMENT RECEIPT', pageWidth / 2, 55, { align: 'center' });
+  doc.text(data.isPaid ? 'UTILITIES PAYMENT RECEIPT' : 'UTILITIES INVOICE', pageWidth / 2, 55, { align: 'center' });
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -161,15 +162,40 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.text('GRAND TOTAL', colType, y);
   doc.text(`${total.toLocaleString()} Birr`, colAmountRight, y, { align: 'right' });
 
-  // PAID stamp
-  doc.saveGraphicsState();
-  doc.setTextColor(34, 139, 34);
-  doc.setFontSize(60);
-  doc.setFont('helvetica', 'bold');
-  const gState = (doc as any).GState({ opacity: 0.12 });
-  doc.setGState(gState);
-  doc.text('PAID', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
-  doc.restoreGraphicsState();
+  // Status indicator
+  y += 16;
+  if (data.isPaid) {
+    doc.setTextColor(34, 139, 34);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('STATUS: PAID', pageWidth / 2, y, { align: 'center' });
+    // Watermark
+    doc.saveGraphicsState();
+    doc.setTextColor(34, 139, 34);
+    doc.setFontSize(60);
+    const gState = (doc as any).GState({ opacity: 0.12 });
+    doc.setGState(gState);
+    doc.text('PAID', pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
+    doc.restoreGraphicsState();
+  } else {
+    doc.setTextColor(200, 50, 50);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('STATUS: PENDING PAYMENT', pageWidth / 2, y, { align: 'center' });
+    // Payment instructions
+    y += 10;
+    const info = PAYMENT_CONFIG.utility;
+    doc.setFillColor(255, 249, 235);
+    doc.roundedRect(15, y - 5, pageWidth - 30, 36, 3, 3, 'F');
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Payment Instructions', 20, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Method: ${info.method}`, 20, y + 13);
+    doc.text(`Account Name: ${info.accountName}`, 20, y + 21);
+    doc.text(`Account Number: ${info.accountNumber}`, 20, y + 29);
+  }
 
   // Footer
   doc.setDrawColor(212, 175, 55);
@@ -180,7 +206,8 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setFont('helvetica', 'normal');
   doc.text('Powered by NUN Tech', pageWidth / 2, pageHeight - 12, { align: 'center' });
 
-  doc.save(`Utilities_Receipt_${data.unitLabel}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  const fname = data.isPaid ? 'Receipt' : 'Invoice';
+  doc.save(`Utilities_${fname}_${data.unitLabel}_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const generateBillPdf = (bill: BillData) => {
