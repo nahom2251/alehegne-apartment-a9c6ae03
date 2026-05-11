@@ -43,6 +43,15 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
+  const marginX = 15;
+  const innerLeft = marginX + 5;
+  const innerRight = pageWidth - marginX - 5;
+  // Column x positions (left edges) — Amount is right-aligned at innerRight
+  const colType = innerLeft;
+  const colPeriod = innerLeft + 40;
+  const colDate = innerLeft + 90;
+  const colAmountRight = innerRight;
+
   // Header
   doc.setFillColor(212, 175, 55);
   doc.rect(0, 0, pageWidth, 40, 'F');
@@ -63,33 +72,33 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 20, 55, { align: 'right' });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, innerRight, 64, { align: 'right' });
 
   // Tenant info box
-  let y = 68;
+  let y = 72;
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(0.5);
-  doc.roundedRect(15, y - 5, pageWidth - 30, 24, 3, 3);
+  doc.roundedRect(marginX, y - 5, pageWidth - marginX * 2, 24, 3, 3);
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont('helvetica', 'bold');
-  doc.text('Tenant:', 20, y + 4);
-  doc.text('Unit:', 20, y + 13);
+  doc.text('Tenant:', innerLeft, y + 4);
+  doc.text('Unit:', innerLeft, y + 13);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.tenantName, 55, y + 4);
-  doc.text(data.unitLabel, 55, y + 13);
+  doc.text(data.tenantName, innerLeft + 25, y + 4);
+  doc.text(data.unitLabel, innerLeft + 25, y + 13);
 
   // Table header
-  y = 102;
+  y = 108;
   doc.setFillColor(245, 245, 245);
-  doc.rect(15, y, pageWidth - 30, 10, 'F');
+  doc.rect(marginX, y, pageWidth - marginX * 2, 10, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(80, 80, 80);
   doc.setFontSize(10);
-  doc.text('Type', 20, y + 7);
-  doc.text('Period', 70, y + 7);
-  doc.text('Date Paid', 120, y + 7);
-  doc.text('Amount (Birr)', pageWidth - 20, y + 7, { align: 'right' });
+  doc.text('Type', colType, y + 7);
+  doc.text('Period', colPeriod, y + 7);
+  doc.text('Date Paid', colDate, y + 7);
+  doc.text('Amount (Birr)', colAmountRight, y + 7, { align: 'right' });
 
   // Rows grouped by type
   const order: CombinedReceiptItem['billType'][] = ['Rent', 'Electricity', 'Water', 'Security'];
@@ -100,55 +109,57 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(9);
 
+  y += 10; // move below header row
   order.forEach((type) => {
     const items = data.items.filter((i) => i.billType === type);
     if (items.length === 0) return;
     items.forEach((item) => {
-      y += 9;
+      y += 8;
       if (y > pageHeight - 60) {
         doc.addPage();
         y = 30;
       }
-      doc.text(item.billType, 20, y);
-      doc.text(`${item.month} ${item.year}`, 70, y);
-      doc.text(item.paidAt ? new Date(item.paidAt).toLocaleDateString() : '-', 120, y);
-      doc.text(item.amount.toLocaleString(), pageWidth - 20, y, { align: 'right' });
+      doc.text(item.billType, colType, y);
+      doc.text(`${item.month} ${item.year}`, colPeriod, y);
+      doc.text(item.paidAt ? new Date(item.paidAt).toLocaleDateString() : '-', colDate, y);
+      doc.text(item.amount.toLocaleString(), colAmountRight, y, { align: 'right' });
       subtotals[type] += item.amount;
       total += item.amount;
     });
   });
 
   // Subtotals
-  y += 10;
+  y += 8;
   doc.setDrawColor(220, 220, 220);
   doc.setLineWidth(0.3);
-  doc.line(15, y, pageWidth - 15, y);
+  doc.line(marginX, y, pageWidth - marginX, y);
   y += 8;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(80, 80, 80);
-  doc.text('Subtotals', 20, y);
+  doc.text('Subtotals', colType, y);
   order.forEach((type) => {
     if (subtotals[type] > 0) {
-      y += 7;
+      y += 6;
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
-      doc.text(type, 25, y);
-      doc.text(`${subtotals[type].toLocaleString()} Birr`, pageWidth - 20, y, { align: 'right' });
+      doc.text(type, colType + 5, y);
+      doc.text(`${subtotals[type].toLocaleString()} Birr`, colAmountRight, y, { align: 'right' });
     }
   });
 
   // Grand total
-  y += 12;
+  y += 10;
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
-  doc.line(15, y, pageWidth - 15, y);
-  y += 10;
+  doc.line(marginX, y, pageWidth - marginX, y);
+  y += 9;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(50, 50, 50);
-  doc.text('GRAND TOTAL', 20, y);
-  doc.text(`${total.toLocaleString()} Birr`, pageWidth - 20, y, { align: 'right' });
+  doc.text('GRAND TOTAL', colType, y);
+  doc.text(`${total.toLocaleString()} Birr`, colAmountRight, y, { align: 'right' });
 
   // PAID stamp
   doc.saveGraphicsState();
@@ -163,7 +174,7 @@ export const generateCombinedReceiptPdf = (data: CombinedReceiptData) => {
   // Footer
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(0.5);
-  doc.line(15, pageHeight - 20, pageWidth - 15, pageHeight - 20);
+  doc.line(marginX, pageHeight - 20, pageWidth - marginX, pageHeight - 20);
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.setFont('helvetica', 'normal');
