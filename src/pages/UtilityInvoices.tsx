@@ -275,6 +275,7 @@ const UtilityInvoices = () => {
       tenantName: apt?.tenant_name || 'Tenant',
       unitLabel: apt?.label || '-',
       items,
+      isPaid: inv.status === 'paid',
     });
   };
 
