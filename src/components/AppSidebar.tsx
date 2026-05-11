@@ -25,6 +25,7 @@ import {
   Receipt,
   ShieldCheck,
   Home,
+  Users as UsersIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -46,7 +47,7 @@ const AppSidebar = () => {
     { title: t('nav.rent'), url: '/rent', icon: Home },
     { title: t('nav.revenue'), url: '/revenue', icon: DollarSign },
     { title: 'Utility Invoices', url: '/utility-invoices', icon: Receipt },
-    { title: t('nav.paymentReview'), url: '/payments', icon: Receipt },
+    { title: 'Tenant Payments', url: '/tenant-payments', icon: UsersIcon },
   ];
 
   if (isSuperAdmin) {
