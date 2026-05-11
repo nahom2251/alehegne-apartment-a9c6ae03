@@ -104,20 +104,29 @@ const AuthenticatedApp = () => {
   );
 };
 
-const App = () => {
+// Sits inside AuthProvider so auth initializes immediately on page load
+const AppWithSplash = () => {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashComplete = useCallback(() => setShowSplash(false), []);
 
+  return (
+    <>
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      {!showSplash && <AuthenticatedApp />}
+    </>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
           <BrowserRouter>
             <AuthProvider>
-              <AuthenticatedApp />
+              <AppWithSplash />
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
@@ -127,4 +136,3 @@ const App = () => {
 };
 
 export default App;
-
