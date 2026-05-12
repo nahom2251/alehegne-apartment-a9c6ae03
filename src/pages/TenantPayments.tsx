@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Loader2, Users, Home, Zap, Droplets, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Users, Home, Zap, Droplets, ShieldCheck, Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { generateTenantPaymentsPdf } from '@/lib/pdfGenerator';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const PAGE_SIZE = 15;
@@ -99,12 +100,34 @@ const TenantPayments = () => {
     return { paid, pending, count: filtered.length };
   }, [filtered]);
 
+  const handleDownloadPdf = () => {
+    const tenantLabel = aptFilter === 'all' ? 'all' : (aptMap[aptFilter]?.label || 'all');
+    generateTenantPaymentsPdf({
+      rows: sorted.map((r) => ({
+        apartmentLabel: aptMap[r.apartment_id]?.label || '-',
+        tenantName: aptMap[r.apartment_id]?.tenant_name || '',
+        type: typeMeta[r.type].label as 'Rent' | 'Electricity' | 'Water' | 'Security',
+        month: MONTHS[r.month - 1],
+        year: r.year,
+        amount: r.amount,
+        isPaid: r.is_paid,
+        paidAt: r.paid_at,
+      })),
+      filters: { tenant: tenantLabel, type: typeFilter, status: statusFilter },
+    });
+  };
+
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Users className="w-6 h-6 text-primary" />
-        Tenant Payments
-      </h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Users className="w-6 h-6 text-primary" />
+          Tenant Payments
+        </h1>
+        <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={loading || sorted.length === 0}>
+          <Download className="w-4 h-4 mr-1" /> Download PDF
+        </Button>
+      </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
