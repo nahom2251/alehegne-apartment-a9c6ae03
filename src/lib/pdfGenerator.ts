@@ -441,3 +441,141 @@ export const generateRevenuePdf = (data: RevenueData) => {
 
   doc.save(`Revenue_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
+interface TenantPaymentRow {
+  apartmentLabel: string;
+  tenantName: string;
+  type: 'Rent' | 'Electricity' | 'Water' | 'Security';
+  month: string;
+  year: number;
+  amount: number;
+  isPaid: boolean;
+  paidAt?: string | null;
+}
+
+interface TenantPaymentsReportData {
+  rows: TenantPaymentRow[];
+  filters?: { tenant?: string; type?: string; status?: string };
+}
+
+export const generateTenantPaymentsPdf = (data: TenantPaymentsReportData) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 15;
+  const innerLeft = marginX + 5;
+  const innerRight = pageWidth - marginX - 5;
+
+  // Columns
+  const colTenant = innerLeft;
+  const colType = innerLeft + 60;
+  const colPeriod = innerLeft + 95;
+  const colStatus = innerLeft + 130;
+  const colAmountRight = innerRight;
+
+  // Header
+  doc.setFillColor(212, 175, 55);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AS Apt.', pageWidth / 2, 18, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Tenant Payments Report', pageWidth / 2, 28, { align: 'center' });
+
+  // Title and meta
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Tenant Payments', marginX, 52);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, innerRight, 52, { align: 'right' });
+
+  let y = 60;
+  if (data.filters) {
+    const parts: string[] = [];
+    if (data.filters.tenant && data.filters.tenant !== 'all') parts.push(`Tenant: ${data.filters.tenant}`);
+    if (data.filters.type && data.filters.type !== 'all') parts.push(`Type: ${data.filters.type}`);
+    if (data.filters.status && data.filters.status !== 'all') parts.push(`Status: ${data.filters.status}`);
+    if (parts.length) {
+      doc.text(parts.join('   |   '), marginX, y);
+      y += 6;
+    }
+  }
+
+  // Totals
+  const paidTotal = data.rows.filter(r => r.isPaid).reduce((s, r) => s + r.amount, 0);
+  const pendingTotal = data.rows.filter(r => !r.isPaid).reduce((s, r) => s + r.amount, 0);
+
+  y += 4;
+  doc.setFillColor(255, 249, 235);
+  doc.roundedRect(marginX, y, pageWidth - marginX * 2, 18, 3, 3, 'F');
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Collected: ${paidTotal.toLocaleString()} Birr`, innerLeft, y + 11);
+  doc.text(`Pending: ${pendingTotal.toLocaleString()} Birr`, innerLeft + 70, y + 11);
+  doc.text(`Records: ${data.rows.length}`, innerRight, y + 11, { align: 'right' });
+  y += 24;
+
+  // Table header
+  const drawHeader = () => {
+    doc.setFillColor(245, 245, 245);
+    doc.rect(marginX, y, pageWidth - marginX * 2, 9, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(9);
+    doc.text('Tenant / Unit', colTenant, y + 6);
+    doc.text('Type', colType, y + 6);
+    doc.text('Period', colPeriod, y + 6);
+    doc.text('Status', colStatus, y + 6);
+    doc.text('Amount', colAmountRight, y + 6, { align: 'right' });
+    y += 11;
+  };
+  drawHeader();
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(50, 50, 50);
+
+  data.rows.forEach((r) => {
+    if (y > pageHeight - 25) {
+      doc.addPage();
+      y = 20;
+      drawHeader();
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+    }
+    const tenantLine = r.tenantName ? `${r.apartmentLabel} — ${r.tenantName}` : r.apartmentLabel;
+    const tenantTxt = doc.splitTextToSize(tenantLine, colType - colTenant - 2)[0];
+    doc.text(tenantTxt, colTenant, y);
+    doc.text(r.type, colType, y);
+    doc.text(`${r.month} ${r.year}`, colPeriod, y);
+    if (r.isPaid) doc.setTextColor(34, 139, 34); else doc.setTextColor(200, 50, 50);
+    doc.text(r.isPaid ? 'Paid' : 'Pending', colStatus, y);
+    doc.setTextColor(50, 50, 50);
+    doc.text(r.amount.toLocaleString(), colAmountRight, y, { align: 'right' });
+    y += 7;
+  });
+
+  // Footer on every page
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(212, 175, 55);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, pageHeight - 20, pageWidth - marginX, pageHeight - 20);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Powered by NUN Tech', pageWidth / 2, pageHeight - 12, { align: 'center' });
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - marginX, pageHeight - 12, { align: 'right' });
+  }
+
+  doc.save(`Tenant_Payments_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
