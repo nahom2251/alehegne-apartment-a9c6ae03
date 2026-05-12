@@ -144,10 +144,24 @@ const RentBilling = () => {
   };
 
   const markPaid = async (id: string) => {
-    await supabase
+    const bill = bills.find(b => b.id === id);
+    const { error } = await supabase
       .from('rent_bills')
       .update({ is_paid: true, paid_at: new Date().toISOString() })
       .eq('id', id);
+    if (error) { toast.error(error.message); return; }
+
+    if (bill) {
+      const { count } = await supabase
+        .from('rent_bills')
+        .select('id', { count: 'exact', head: true })
+        .eq('apartment_id', bill.apartment_id)
+        .eq('is_paid', true);
+      await supabase
+        .from('apartments')
+        .update({ rent_paid_months: count || 0 })
+        .eq('id', bill.apartment_id);
+    }
     toast.success(t('bill.paid'));
     fetchData();
   };

@@ -25,6 +25,7 @@ interface Apartment {
 const Apartments = () => {
   const { t } = useLanguage();
   const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [paidCounts, setPaidCounts] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<Apartment | null>(null);
   const [form, setForm] = useState({ tenant_name: '', tenant_phone: '', move_in_date: '', monthly_rent: '', rent_paid_months: '' });
   const [saving, setSaving] = useState(false);
@@ -32,6 +33,15 @@ const Apartments = () => {
   const fetchApartments = async () => {
     const { data } = await supabase.from('apartments').select('*').order('floor');
     if (data) setApartments(data);
+    const { data: paidBills } = await supabase
+      .from('rent_bills')
+      .select('apartment_id')
+      .eq('is_paid', true);
+    const counts: Record<string, number> = {};
+    (paidBills || []).forEach((b: any) => {
+      counts[b.apartment_id] = (counts[b.apartment_id] || 0) + 1;
+    });
+    setPaidCounts(counts);
   };
 
   useEffect(() => { fetchApartments(); }, []);
@@ -43,7 +53,7 @@ const Apartments = () => {
       tenant_phone: apt.tenant_phone || '',
       move_in_date: apt.move_in_date || '',
       monthly_rent: String(apt.monthly_rent || ''),
-      rent_paid_months: String(apt.rent_paid_months || '0'),
+      rent_paid_months: apt.is_occupied ? String(apt.rent_paid_months || '0') : '0',
     });
   };
 
@@ -51,17 +61,41 @@ const Apartments = () => {
     if (!editing) return;
     setSaving(true);
     const isOccupied = !!form.tenant_name.trim();
+    const isFirstRegistration = isOccupied && !editing.is_occupied;
+    const initialPaidMonths = isFirstRegistration ? (Number(form.rent_paid_months) || 0) : (editing.rent_paid_months || 0);
+
     const { error } = await supabase.from('apartments').update({
       tenant_name: isOccupied ? form.tenant_name : null,
       tenant_phone: isOccupied ? form.tenant_phone : null,
       move_in_date: isOccupied ? form.move_in_date || null : null,
       monthly_rent: isOccupied ? Number(form.monthly_rent) || 0 : 0,
-      rent_paid_months: isOccupied ? Number(form.rent_paid_months) || 0 : 0,
+      rent_paid_months: isOccupied ? initialPaidMonths : 0,
       is_occupied: isOccupied,
     }).eq('id', editing.id);
-    
+
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // First-time registration: create paid rent bills for the initial months
+    if (isFirstRegistration && initialPaidMonths > 0 && form.move_in_date) {
+      const moveIn = parseISO(form.move_in_date);
+      const rentAmount = Number(form.monthly_rent) || 0;
+      const nowIso = new Date().toISOString();
+      const billsToInsert = Array.from({ length: initialPaidMonths }, (_, i) => {
+        const d = addMonths(moveIn, i);
+        return {
+          apartment_id: editing.id,
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+          amount: rentAmount,
+          is_paid: true,
+          paid_at: nowIso,
+        };
+      });
+      const { error: billsError } = await supabase.from('rent_bills').insert(billsToInsert);
+      if (billsError) { setSaving(false); toast.error(billsError.message); return; }
+    }
+
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
     toast.success(t('apt.save'));
     setEditing(null);
     fetchApartments();
@@ -73,6 +107,7 @@ const Apartments = () => {
       tenant_name: null, tenant_phone: null, move_in_date: null,
       monthly_rent: 0, rent_paid_months: 0, is_occupied: false,
     }).eq('id', apt.id);
+    await supabase.from('rent_bills').delete().eq('apartment_id', apt.id);
     toast.success(t('apt.removeTenant'));
     fetchApartments();
   };
@@ -80,7 +115,7 @@ const Apartments = () => {
   const getRentStatus = (apt: Apartment) => {
     if (!apt.move_in_date || !apt.monthly_rent || !apt.is_occupied) return null;
     const moveIn = parseISO(apt.move_in_date);
-    const paidUntil = addMonths(moveIn, apt.rent_paid_months || 0);
+    const paidUntil = addMonths(moveIn, paidCounts[apt.id] ?? apt.rent_paid_months ?? 0);
     const daysLeft = differenceInDays(paidUntil, new Date());
     return { daysLeft };
   };
@@ -126,7 +161,7 @@ const Apartments = () => {
                       </div>
                       <div>
                         <p className="text-muted-foreground">{t('apt.paidMonths')}</p>
-                        <p className="font-medium">{apt.rent_paid_months || 0}</p>
+                        <p className="font-medium">{paidCounts[apt.id] ?? apt.rent_paid_months ?? 0}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -175,10 +210,19 @@ const Apartments = () => {
               <label className="text-sm font-medium">{t('apt.rent')} ({t('common.birr')})</label>
               <Input type="number" value={form.monthly_rent} onChange={e => setForm({...form, monthly_rent: e.target.value})} className="mt-1" />
             </div>
-            <div>
-              <label className="text-sm font-medium">{t('apt.paidMonths')}</label>
-              <Input type="number" min="0" max="12" value={form.rent_paid_months} onChange={e => setForm({...form, rent_paid_months: e.target.value})} className="mt-1" />
-            </div>
+            {!editing?.is_occupied ? (
+              <div>
+                <label className="text-sm font-medium">{t('apt.paidMonths')} (initial)</label>
+                <Input type="number" min="0" max="12" value={form.rent_paid_months} onChange={e => setForm({...form, rent_paid_months: e.target.value})} className="mt-1" />
+                <p className="text-xs text-muted-foreground mt-1">Records first payment. Future payments are managed in Rent Billing.</p>
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm font-medium">{t('apt.paidMonths')}</label>
+                <Input type="number" value={paidCounts[editing.id] ?? editing.rent_paid_months ?? 0} disabled className="mt-1" />
+                <p className="text-xs text-muted-foreground mt-1">Read-only. Manage payments in Rent Billing.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>{t('apt.cancel')}</Button>
