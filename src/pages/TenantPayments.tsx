@@ -16,6 +16,7 @@ interface Apartment { id: string; label: string; tenant_name: string | null; }
 interface PaymentRow {
   key: string;
   apartment_id: string;
+  tenant_name: string | null;
   type: 'rent' | 'electricity' | 'water' | 'security';
   month: number;
   year: number;
@@ -47,17 +48,17 @@ const TenantPayments = () => {
       setLoading(true);
       const [{ data: apts }, { data: rent }, { data: elec }, { data: water }, { data: sec }] = await Promise.all([
         supabase.from('apartments').select('id, label, tenant_name').order('floor').order('position'),
-        supabase.from('rent_bills').select('id, apartment_id, month, year, amount, is_paid, paid_at, created_at'),
-        supabase.from('electricity_bills').select('id, apartment_id, month, year, total, is_paid, paid_at, created_at'),
-        supabase.from('water_bills').select('id, apartment_id, month, year, amount, is_paid, paid_at, created_at'),
-        supabase.from('security_bills').select('id, apartment_id, month, year, amount, is_paid, paid_at, created_at'),
+        supabase.from('rent_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
+        supabase.from('electricity_bills').select('id, apartment_id, tenant_name, month, year, total, is_paid, paid_at, created_at'),
+        supabase.from('water_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
+        supabase.from('security_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
       ]);
       if (apts) setApartments(apts);
       const merged: PaymentRow[] = [];
-      (rent || []).forEach((r: any) => merged.push({ key: `rent-${r.id}`, apartment_id: r.apartment_id, type: 'rent', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
-      (elec || []).forEach((r: any) => merged.push({ key: `elec-${r.id}`, apartment_id: r.apartment_id, type: 'electricity', month: r.month, year: r.year, amount: Number(r.total || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
-      (water || []).forEach((r: any) => merged.push({ key: `water-${r.id}`, apartment_id: r.apartment_id, type: 'water', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
-      (sec || []).forEach((r: any) => merged.push({ key: `sec-${r.id}`, apartment_id: r.apartment_id, type: 'security', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
+      (rent || []).forEach((r: any) => merged.push({ key: `rent-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'rent', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
+      (elec || []).forEach((r: any) => merged.push({ key: `elec-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'electricity', month: r.month, year: r.year, amount: Number(r.total || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
+      (water || []).forEach((r: any) => merged.push({ key: `water-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'water', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
+      (sec || []).forEach((r: any) => merged.push({ key: `sec-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'security', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
       // Sort newest first by year, month, then created_at
       merged.sort((a, b) => (b.year - a.year) || (b.month - a.month) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       setRows(merged);
@@ -106,6 +107,8 @@ const TenantPayments = () => {
       rows: sorted.map((r) => ({
         apartmentLabel: aptMap[r.apartment_id]?.label || '-',
         tenantName: aptMap[r.apartment_id]?.tenant_name || '',
+        // prefer snapshot if apartment is now vacant/reassigned
+        // (the PDF uses tenantName separately; we still pass current apt name)
         type: typeMeta[r.type].label as 'Rent' | 'Electricity' | 'Water' | 'Security',
         month: MONTHS[r.month - 1],
         year: r.year,
