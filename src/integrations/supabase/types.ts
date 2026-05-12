@@ -76,6 +76,7 @@ export type Database = {
           rate: number
           service_fee: number | null
           tax_percent: number | null
+          tenant_name: string | null
           total: number | null
           tv_tax: number | null
           year: number
@@ -93,6 +94,7 @@ export type Database = {
           rate?: number
           service_fee?: number | null
           tax_percent?: number | null
+          tenant_name?: string | null
           total?: number | null
           tv_tax?: number | null
           year: number
@@ -110,6 +112,7 @@ export type Database = {
           rate?: number
           service_fee?: number | null
           tax_percent?: number | null
+          tenant_name?: string | null
           total?: number | null
           tv_tax?: number | null
           year?: number
@@ -231,6 +234,7 @@ export type Database = {
           is_paid: boolean | null
           month: number
           paid_at: string | null
+          tenant_name: string | null
           year: number
         }
         Insert: {
@@ -241,6 +245,7 @@ export type Database = {
           is_paid?: boolean | null
           month: number
           paid_at?: string | null
+          tenant_name?: string | null
           year: number
         }
         Update: {
@@ -251,6 +256,7 @@ export type Database = {
           is_paid?: boolean | null
           month?: number
           paid_at?: string | null
+          tenant_name?: string | null
           year?: number
         }
         Relationships: [
@@ -313,6 +319,7 @@ export type Database = {
           is_paid: boolean | null
           month: number
           paid_at: string | null
+          tenant_name: string | null
           year: number
         }
         Insert: {
@@ -323,6 +330,7 @@ export type Database = {
           is_paid?: boolean | null
           month: number
           paid_at?: string | null
+          tenant_name?: string | null
           year: number
         }
         Update: {
@@ -333,6 +341,7 @@ export type Database = {
           is_paid?: boolean | null
           month?: number
           paid_at?: string | null
+          tenant_name?: string | null
           year?: number
         }
         Relationships: [
@@ -377,6 +386,7 @@ export type Database = {
           security_bill_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["utility_invoice_status"]
+          tenant_name: string | null
           total: number
           updated_at: string
           water_amount: number
@@ -396,6 +406,7 @@ export type Database = {
           security_bill_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["utility_invoice_status"]
+          tenant_name?: string | null
           total?: number
           updated_at?: string
           water_amount?: number
@@ -415,6 +426,7 @@ export type Database = {
           security_bill_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["utility_invoice_status"]
+          tenant_name?: string | null
           total?: number
           updated_at?: string
           water_amount?: number
@@ -432,6 +444,7 @@ export type Database = {
           is_paid: boolean | null
           month: number
           paid_at: string | null
+          tenant_name: string | null
           year: number
         }
         Insert: {
@@ -442,6 +455,7 @@ export type Database = {
           is_paid?: boolean | null
           month: number
           paid_at?: string | null
+          tenant_name?: string | null
           year: number
         }
         Update: {
@@ -452,6 +466,7 @@ export type Database = {
           is_paid?: boolean | null
           month?: number
           paid_at?: string | null
+          tenant_name?: string | null
           year?: number
         }
         Relationships: [
