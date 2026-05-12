@@ -103,11 +103,20 @@ const Apartments = () => {
 
   const handleRemoveTenant = async (apt: Apartment) => {
     if (!confirm(t('common.confirm'))) return;
+    // Snapshot tenant name onto every payment record so history is preserved
+    if (apt.tenant_name) {
+      await Promise.all([
+        supabase.from('rent_bills').update({ tenant_name: apt.tenant_name }).eq('apartment_id', apt.id).is('tenant_name', null),
+        supabase.from('electricity_bills').update({ tenant_name: apt.tenant_name }).eq('apartment_id', apt.id).is('tenant_name', null),
+        supabase.from('water_bills').update({ tenant_name: apt.tenant_name }).eq('apartment_id', apt.id).is('tenant_name', null),
+        supabase.from('security_bills').update({ tenant_name: apt.tenant_name }).eq('apartment_id', apt.id).is('tenant_name', null),
+        supabase.from('utility_invoices').update({ tenant_name: apt.tenant_name }).eq('apartment_id', apt.id).is('tenant_name', null),
+      ]);
+    }
     await supabase.from('apartments').update({
       tenant_name: null, tenant_phone: null, move_in_date: null,
       monthly_rent: 0, rent_paid_months: 0, is_occupied: false,
     }).eq('id', apt.id);
-    await supabase.from('rent_bills').delete().eq('apartment_id', apt.id);
     toast.success(t('apt.removeTenant'));
     fetchApartments();
   };
