@@ -106,9 +106,7 @@ const TenantPayments = () => {
     generateTenantPaymentsPdf({
       rows: sorted.map((r) => ({
         apartmentLabel: aptMap[r.apartment_id]?.label || '-',
-        tenantName: aptMap[r.apartment_id]?.tenant_name || '',
-        // prefer snapshot if apartment is now vacant/reassigned
-        // (the PDF uses tenantName separately; we still pass current apt name)
+        tenantName: r.tenant_name || aptMap[r.apartment_id]?.tenant_name || '',
         type: typeMeta[r.type].label as 'Rent' | 'Electricity' | 'Water' | 'Security',
         month: MONTHS[r.month - 1],
         year: r.year,
@@ -203,7 +201,7 @@ const TenantPayments = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {apt?.label || '-'}{apt?.tenant_name ? ` — ${apt.tenant_name}` : ''}
+                          {apt?.label || '-'}{(r.tenant_name || apt?.tenant_name) ? ` — ${r.tenant_name || apt?.tenant_name}` : ''}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {meta.label} • {MONTHS[r.month - 1]} {r.year}
