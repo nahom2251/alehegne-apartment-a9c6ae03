@@ -118,6 +118,8 @@ const RentBilling = () => {
           month: m,
           year: y,
           amount: rentAmount,
+          is_paid: true,
+          paid_at: new Date().toISOString(),
         });
         existingSet.add(key);
       }
@@ -136,7 +138,19 @@ const RentBilling = () => {
       toast.error(error.message);
       return;
     }
-    toast.success(`${billsToInsert.length} rent bill(s) created`);
+
+    // Sync rent_paid_months on the apartment
+    const { count } = await supabase
+      .from('rent_bills')
+      .select('id', { count: 'exact', head: true })
+      .eq('apartment_id', selectedApartment)
+      .eq('is_paid', true);
+    await supabase
+      .from('apartments')
+      .update({ rent_paid_months: count || 0 })
+      .eq('id', selectedApartment);
+
+    toast.success(`Recorded payment for ${billsToInsert.length} month(s)`);
     setShowAdd(false);
     setSelectedApartment('');
     setNumMonths('1');
