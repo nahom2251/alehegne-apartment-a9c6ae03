@@ -79,7 +79,7 @@ const UserManagement = () => {
     const { error } = await supabase.from('profiles').update({ status }).eq('user_id', userId);
     setLoading(null);
     if (error) { toast.error(error.message); return; }
-    toast.success(`User ${status}`);
+    toast.success(`${t('um.userStatus')} ${status === 'approved' ? t('user.approved') : t('user.rejected')}`);
     fetchUsers();
   };
 
@@ -107,7 +107,7 @@ const UserManagement = () => {
     }
   };
 
-  if (!isSuperAdmin) return <p className="text-center text-muted-foreground py-8">Access denied</p>;
+  if (!isSuperAdmin) return <p className="text-center text-muted-foreground py-8">{t('common.accessDenied')}</p>;
 
   return (
     <div className="space-y-6">
@@ -146,7 +146,7 @@ const UserManagement = () => {
                 </CardContent>
               </Card>
             ))}
-            {users.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">No users found</p>}
+            {users.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">{t('um.noUsers')}</p>}
           </div>
         </TabsContent>
 
@@ -189,7 +189,7 @@ const UserManagement = () => {
                 </CardContent>
               </Card>
             ))}
-            {tenants.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">No tenants found</p>}
+            {tenants.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">{t('um.noTenants')}</p>}
           </div>
         </TabsContent>
       </Tabs>

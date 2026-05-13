@@ -130,9 +130,9 @@ const Apartments = () => {
   };
 
   const getStatusBadge = (daysLeft: number) => {
-    if (daysLeft < 0) return <span className="status-red px-2 py-0.5 rounded-full text-xs font-medium">🔴 {Math.abs(daysLeft)}d {t('apt.overdue')}</span>;
-    if (daysLeft <= 5) return <span className="status-yellow px-2 py-0.5 rounded-full text-xs font-medium">🟡 {daysLeft}d left</span>;
-    return <span className="status-green px-2 py-0.5 rounded-full text-xs font-medium">🟢 {daysLeft}d left</span>;
+    if (daysLeft < 0) return <span className="status-red px-2 py-0.5 rounded-full text-xs font-medium">🔴 {Math.abs(daysLeft)}{t('apt.daysOverdueShort')}</span>;
+    if (daysLeft <= 5) return <span className="status-yellow px-2 py-0.5 rounded-full text-xs font-medium">🟡 {daysLeft}{t('apt.daysLeftShort')}</span>;
+    return <span className="status-green px-2 py-0.5 rounded-full text-xs font-medium">🟢 {daysLeft}{t('apt.daysLeftShort')}</span>;
   };
 
   return (
@@ -221,15 +221,15 @@ const Apartments = () => {
             </div>
             {!editing?.is_occupied ? (
               <div>
-                <label className="text-sm font-medium">{t('apt.paidMonths')} (initial)</label>
+                <label className="text-sm font-medium">{t('apt.paidMonths')} ({t('apt.initial')})</label>
                 <Input type="number" min="0" max="12" value={form.rent_paid_months} onChange={e => setForm({...form, rent_paid_months: e.target.value})} className="mt-1" />
-                <p className="text-xs text-muted-foreground mt-1">Records first payment. Future payments are managed in Rent Billing.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('apt.recordsFirst')}</p>
               </div>
             ) : (
               <div>
                 <label className="text-sm font-medium">{t('apt.paidMonths')}</label>
                 <Input type="number" value={paidCounts[editing.id] ?? editing.rent_paid_months ?? 0} disabled className="mt-1" />
-                <p className="text-xs text-muted-foreground mt-1">Read-only. Manage payments in Rent Billing.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('apt.readOnly')}</p>
               </div>
             )}
           </div>

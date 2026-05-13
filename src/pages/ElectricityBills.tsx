@@ -21,9 +21,11 @@ interface ElecBill {
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
 
 const ElectricityBills = () => {
   const { t } = useLanguage();
+  const tMonths = MONTH_KEYS.map(k => t(k));
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [bills, setBills] = useState<ElecBill[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -51,7 +53,7 @@ const ElectricityBills = () => {
   };
 
   const handleAdd = async () => {
-    if (!form.apartment_id || !form.kwh || !form.rate) { toast.error('Fill all fields'); return; }
+    if (!form.apartment_id || !form.kwh || !form.rate) { toast.error(t('common.fillAll')); return; }
     setSaving(true);
     const kwh = Number(form.kwh);
     const rate = Number(form.rate);
@@ -127,16 +129,16 @@ const ElectricityBills = () => {
       <div className="flex flex-wrap gap-3 items-center">
         <Filter className="w-4 h-4 text-muted-foreground" />
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-[120px]"><SelectValue placeholder="Month" /></SelectTrigger>
+          <SelectTrigger className="w-[120px]"><SelectValue placeholder={t('filter.month')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Months</SelectItem>
-            {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+            <SelectItem value="all">{t('filter.allMonths')}</SelectItem>
+            {tMonths.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger className="w-[100px]"><SelectValue placeholder="Year" /></SelectTrigger>
+          <SelectTrigger className="w-[100px]"><SelectValue placeholder={t('filter.year')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
+            <SelectItem value="all">{t('filter.allYears')}</SelectItem>
             {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -155,7 +157,7 @@ const ElectricityBills = () => {
                   <Badge variant={bill.is_paid ? 'default' : 'destructive'} className={bill.is_paid ? 'bg-success' : ''}>
                     {bill.is_paid ? t('bill.paid') : t('bill.unpaid')}
                   </Badge>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadPdf(bill)} title={bill.is_paid ? 'Download Receipt' : 'Download Invoice'}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadPdf(bill)} title={bill.is_paid ? t('bill.downloadReceipt') : t('bill.downloadInvoice')}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -164,7 +166,7 @@ const ElectricityBills = () => {
             <CardContent className="text-sm space-y-2">
               <p className="text-muted-foreground">{bill.apartments?.tenant_name}</p>
               <div className="grid grid-cols-2 gap-1">
-                <span className="text-muted-foreground">{MONTHS[bill.month - 1]} {bill.year}</span>
+                <span className="text-muted-foreground">{tMonths[bill.month - 1]} {bill.year}</span>
                 <span className="text-right font-semibold">{bill.total?.toLocaleString()} {t('common.birr')}</span>
                 <span className="text-muted-foreground">{bill.kwh} kWh × {bill.rate}</span>
               </div>
@@ -176,7 +178,7 @@ const ElectricityBills = () => {
             </CardContent>
           </Card>
         ))}
-        {filteredBills.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">No electricity bills found</p>}
+        {filteredBills.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">{t('bill.noElec')}</p>}
       </div>
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -198,7 +200,7 @@ const ElectricityBills = () => {
                 <Select value={form.month} onValueChange={v => setForm({...form, month: v})}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {MONTHS.map((m, i) => <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>)}
+                    {tMonths.map((m, i) => <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

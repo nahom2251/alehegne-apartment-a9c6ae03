@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +7,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
 
 const NotificationBell = () => {
+  const { t } = useLanguage();
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -42,16 +44,16 @@ const NotificationBell = () => {
       {open && (
         <div className="fixed inset-x-0 top-14 mx-auto w-80 max-h-[400px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:mx-0">
           <div className="flex items-center justify-between p-3 border-b border-border">
-            <h3 className="font-semibold text-sm">Notifications</h3>
+            <h3 className="font-semibold text-sm">{t('notif.title')}</h3>
             {unreadCount > 0 && (
               <button onClick={markAllRead} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <CheckCheck className="w-3 h-3" /> Mark all read
+                <CheckCheck className="w-3 h-3" /> {t('notif.markAllRead')}
               </button>
             )}
           </div>
           <div className="overflow-y-auto max-h-[340px]">
             {notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No notifications</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('notif.empty')}</p>
             ) : (
               notifications.map((n) => (
                 <div

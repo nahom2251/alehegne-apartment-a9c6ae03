@@ -46,8 +46,8 @@ const AppSidebar = () => {
     { title: t('nav.security'), url: '/security', icon: ShieldCheck },
     { title: t('nav.rent'), url: '/rent', icon: Home },
     { title: t('nav.revenue'), url: '/revenue', icon: DollarSign },
-    { title: 'Utility Invoices', url: '/utility-invoices', icon: Receipt },
-    { title: 'Tenant Payments', url: '/tenant-payments', icon: UsersIcon },
+    { title: t('ui.title'), url: '/utility-invoices', icon: Receipt },
+    { title: t('tp.title'), url: '/tenant-payments', icon: UsersIcon },
   ];
 
   if (isSuperAdmin) {

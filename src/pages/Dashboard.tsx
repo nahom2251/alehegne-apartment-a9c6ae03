@@ -142,8 +142,8 @@ const Dashboard = () => {
                   {apt.is_occupied ? (
                     <div className="text-sm space-y-1">
                       <p className="text-foreground">{apt.tenant_name}</p>
-                      <p className="text-muted-foreground">
-                        {apt.monthly_rent?.toLocaleString()} {t('common.birr')}/mo
+                        <p className="text-muted-foreground">
+                        {apt.monthly_rent?.toLocaleString()} {t('common.birr')}{t('apt.perMonth')}
                       </p>
                     </div>
                   ) : (

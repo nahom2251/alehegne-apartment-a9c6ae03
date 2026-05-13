@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { generateTenantPaymentsPdf } from '@/lib/pdfGenerator';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
 const PAGE_SIZE = 15;
 
 interface Apartment { id: string; label: string; tenant_name: string | null; }
@@ -35,6 +36,15 @@ const typeMeta: Record<PaymentRow['type'], { label: string; icon: any; color: st
 
 const TenantPayments = () => {
   const { t } = useLanguage();
+  const tMonths = MONTH_KEYS.map(k => t(k));
+  const typeLabel = (type: PaymentRow['type']) => {
+    switch (type) {
+      case 'rent': return t('type.rent');
+      case 'electricity': return t('type.electricity');
+      case 'water': return t('type.water');
+      case 'security': return t('type.security');
+    }
+  };
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [rows, setRows] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,37 +133,37 @@ const TenantPayments = () => {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="w-6 h-6 text-primary" />
-          Tenant Payments
+          {t('tp.title')}
         </h1>
         <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={loading || sorted.length === 0}>
-          <Download className="w-4 h-4 mr-1" /> Download PDF
+          <Download className="w-4 h-4 mr-1" /> {t('tp.downloadPdf')}
         </Button>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4 pb-4">
-          <p className="text-xs text-muted-foreground">Collected</p>
+          <p className="text-xs text-muted-foreground">{t('tp.collected')}</p>
           <p className="text-lg font-bold text-success">{totals.paid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
-          <p className="text-xs text-muted-foreground">Pending</p>
+          <p className="text-xs text-muted-foreground">{t('tp.pending')}</p>
           <p className="text-lg font-bold text-destructive">{totals.pending.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
-          <p className="text-xs text-muted-foreground">Records</p>
+          <p className="text-xs text-muted-foreground">{t('tp.records')}</p>
           <p className="text-lg font-bold">{totals.count}</p>
         </CardContent></Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-sm">Filters</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-sm">{t('common.filters')}</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Select value={aptFilter} onValueChange={(v) => { setAptFilter(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="Tenant" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('filter.tenant')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tenants</SelectItem>
+              <SelectItem value="all">{t('filter.allTenants')}</SelectItem>
               {apartments.map((a) => (
                 <SelectItem key={a.id} value={a.id}>{a.label}{a.tenant_name ? ` — ${a.tenant_name}` : ''}</SelectItem>
               ))}
@@ -162,19 +172,19 @@ const TenantPayments = () => {
           <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="rent">Rent</SelectItem>
-              <SelectItem value="electricity">Electricity</SelectItem>
-              <SelectItem value="water">Water</SelectItem>
-              <SelectItem value="security">Security</SelectItem>
+              <SelectItem value="all">{t('filter.allTypes')}</SelectItem>
+              <SelectItem value="rent">{t('type.rent')}</SelectItem>
+              <SelectItem value="electricity">{t('type.electricity')}</SelectItem>
+              <SelectItem value="water">{t('type.water')}</SelectItem>
+              <SelectItem value="security">{t('type.security')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="all">{t('filter.allStatuses')}</SelectItem>
+              <SelectItem value="paid">{t('bill.paid')}</SelectItem>
+              <SelectItem value="pending">{t('admin.pending')}</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -184,7 +194,7 @@ const TenantPayments = () => {
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : pageRows.length === 0 ? (
-        <p className="text-center text-muted-foreground py-12">No payment records.</p>
+        <p className="text-center text-muted-foreground py-12">{t('tp.noRecords')}</p>
       ) : (
         <div className="space-y-2">
           {pageRows.map((r) => {
@@ -204,16 +214,16 @@ const TenantPayments = () => {
                           {apt?.label || '-'}{(r.tenant_name || apt?.tenant_name) ? ` — ${r.tenant_name || apt?.tenant_name}` : ''}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {meta.label} • {MONTHS[r.month - 1]} {r.year}
+                          {typeLabel(r.type)} • {tMonths[r.month - 1]} {r.year}
                         </p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="text-sm font-bold">{r.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t('common.birr')}</p>
                       {r.is_paid ? (
-                        <Badge className="bg-success text-success-foreground text-xs">Paid</Badge>
+                        <Badge className="bg-success text-success-foreground text-xs">{t('bill.paid')}</Badge>
                       ) : (
-                        <Badge variant="destructive" className="text-xs">Pending</Badge>
+                        <Badge variant="destructive" className="text-xs">{t('admin.pending')}</Badge>
                       )}
                     </div>
                   </div>
@@ -225,7 +235,7 @@ const TenantPayments = () => {
           {/* Pagination */}
           <div className="flex items-center justify-between pt-3">
             <p className="text-xs text-muted-foreground">
-              Page {currentPage} of {totalPages} • {sorted.length} records
+              {t('common.page')} {currentPage} {t('common.of')} {totalPages} • {sorted.length} {t('common.records')}
             </p>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>

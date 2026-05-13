@@ -31,9 +31,11 @@ interface RentBill {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
 
 const RentBilling = () => {
   const { t } = useLanguage();
+  const tMonths = MONTH_KEYS.map(k => t(k));
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [bills, setBills] = useState<RentBill[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -72,15 +74,15 @@ const RentBilling = () => {
 
   const handleAdd = async () => {
     if (!selectedApartment || !selectedAptData) {
-      toast.error('Please select an apartment');
+      toast.error(t('bill.pleaseSelectApt'));
       return;
     }
     if (!selectedAptData.move_in_date) {
-      toast.error('This apartment has no move-in date set');
+      toast.error(t('bill.noMoveIn'));
       return;
     }
     if (!selectedAptData.monthly_rent) {
-      toast.error('This apartment has no monthly rent set');
+      toast.error(t('bill.noRent2'));
       return;
     }
 
@@ -162,7 +164,7 @@ const RentBilling = () => {
     }
 
     if (billsToInsert.length === 0) {
-      toast.info('All selected months already have bills');
+      toast.info(t('bill.allMonthsHave'));
       setSaving(false);
       return;
     }
@@ -185,7 +187,7 @@ const RentBilling = () => {
       .update({ rent_paid_months: count || 0 })
       .eq('id', selectedApartment);
 
-    toast.success(`Recorded payment for ${billsToInsert.length} month(s)`);
+    toast.success(`${t('bill.recordedFor')} ${billsToInsert.length} ${t('tenant.months')}`);
     setShowAdd(false);
     setSelectedApartment('');
     setNumMonths('1');
@@ -235,16 +237,16 @@ const RentBilling = () => {
       <div className="flex flex-wrap gap-3 items-center">
         <Filter className="w-4 h-4 text-muted-foreground" />
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-[120px]"><SelectValue placeholder="Month" /></SelectTrigger>
+          <SelectTrigger className="w-[120px]"><SelectValue placeholder={t('filter.month')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Months</SelectItem>
-            {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+            <SelectItem value="all">{t('filter.allMonths')}</SelectItem>
+            {tMonths.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger className="w-[100px]"><SelectValue placeholder="Year" /></SelectTrigger>
+          <SelectTrigger className="w-[100px]"><SelectValue placeholder={t('filter.year')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
+            <SelectItem value="all">{t('filter.allYears')}</SelectItem>
             {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -272,7 +274,7 @@ const RentBilling = () => {
                 </p>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{MONTHS[bill.month - 1]} {bill.year}</span>
+                <span className="text-muted-foreground">{tMonths[bill.month - 1]} {bill.year}</span>
                 <span className="font-semibold">{bill.amount?.toLocaleString()} {t('common.birr')}</span>
               </div>
               {bill.is_paid && bill.paid_at && (
@@ -289,7 +291,7 @@ const RentBilling = () => {
           </Card>
         ))}
         {filteredBills.length === 0 && (
-          <p className="col-span-full text-center text-muted-foreground py-8">No rent bills found</p>
+          <p className="col-span-full text-center text-muted-foreground py-8">{t('bill.noRent')}</p>
         )}
       </div>
 
@@ -303,7 +305,7 @@ const RentBilling = () => {
             <div>
               <label className="text-sm font-medium">{t('nav.apartments')}</label>
               <Select value={selectedApartment} onValueChange={setSelectedApartment}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select apartment" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t('bill.selectApt')} /></SelectTrigger>
                 <SelectContent>
                   {apartments.map(a => (
                     <SelectItem key={a.id} value={a.id}>
@@ -324,13 +326,13 @@ const RentBilling = () => {
             )}
 
             <div>
-              <label className="text-sm font-medium">Number of Months</label>
+              <label className="text-sm font-medium">{t('bill.numMonths')}</label>
               <Select value={numMonths} onValueChange={setNumMonths}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 12 }, (_, i) => (
                     <SelectItem key={i + 1} value={String(i + 1)}>
-                      {i + 1} {i === 0 ? 'month' : 'months'}
+                      {i + 1} {i === 0 ? t('common.month') : t('tenant.months')}
                     </SelectItem>
                   ))}
                 </SelectContent>
