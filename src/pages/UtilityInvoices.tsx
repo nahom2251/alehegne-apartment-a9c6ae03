@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { generateCombinedReceiptPdf } from '@/lib/pdfGenerator';
 import { toast } from 'sonner';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
 const PAGE_SIZE = 10;
 const currentYear = new Date().getFullYear();
 const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
@@ -43,6 +45,8 @@ const calcElectricityTotal = (kwh: number, rate: number) => {
 };
 
 const UtilityInvoices = () => {
+  const { t } = useLanguage();
+  const tMonths = MONTH_KEYS.map(k => t(k));
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +93,7 @@ const UtilityInvoices = () => {
   const grandTotal = electricityTotal + (Number(waterAmount) || 0) + (Number(securityAmount) || 0);
 
   const loadDraft = async () => {
-    if (!aptId) { toast.error('Select an apartment first'); return; }
+    if (!aptId) { toast.error(t('ui.selectAptFirst')); return; }
     setSaving(true);
     try {
       // Existing invoice?
@@ -117,7 +121,7 @@ const UtilityInvoices = () => {
         setRate(elec.data ? String(elec.data.rate ?? '') : '');
         setWaterAmount(water.data ? String(water.data.amount ?? existing.water_amount) : String(existing.water_amount));
         setSecurityAmount(sec.data ? String(sec.data.amount ?? existing.security_amount) : String(existing.security_amount));
-        toast.success('Loaded existing invoice');
+        toast.success(t('ui.loadedExisting'));
       } else {
         // Look up existing bills for this period to prefill
         const [elec, water, sec] = await Promise.all([
@@ -130,7 +134,7 @@ const UtilityInvoices = () => {
         setRate(elec.data ? String(elec.data.rate ?? '') : '');
         setWaterAmount(water.data ? String(water.data.amount ?? '') : '');
         setSecurityAmount(sec.data ? String(sec.data.amount ?? '') : '');
-        toast.info('New draft - fill in amounts');
+        toast.info(t('ui.newDraft'));
       }
     } finally {
       setSaving(false);
@@ -215,7 +219,7 @@ const UtilityInvoices = () => {
   };
 
   const handleSave = async () => {
-    if (!aptId) { toast.error('Select an apartment'); return; }
+    if (!aptId) { toast.error(t('bill.pleaseSelectApt')); return; }
     setSaving(true);
     try {
       const { electricity_bill_id, water_bill_id, security_bill_id, elecTotal, wAmt, sAmt } = await upsertBills();
@@ -235,10 +239,10 @@ const UtilityInvoices = () => {
         if (error) throw error;
         setEditing(data as any);
       }
-      toast.success('Invoice saved');
+      toast.success(t('ui.invoiceSaved'));
       fetchAll();
     } catch (e: any) {
-      toast.error(e.message || 'Save failed');
+      toast.error(e.message || t('ui.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -259,7 +263,7 @@ const UtilityInvoices = () => {
     }
     const { error } = await supabase.from('utility_invoices').update(updates).eq('id', inv.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(`Marked as ${status}`);
+    toast.success(`${t('ui.markedAs')} ${status === 'sent' ? t('ui.sent') : t('ui.paid')}`);
     fetchAll();
     if (editing?.id === inv.id) setEditing({ ...editing, ...updates });
   };
@@ -270,7 +274,7 @@ const UtilityInvoices = () => {
     if (inv.electricity_amount > 0) items.push({ billType: 'Electricity', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.electricity_amount), paidAt: inv.paid_at || undefined });
     if (inv.water_amount > 0) items.push({ billType: 'Water', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.water_amount), paidAt: inv.paid_at || undefined });
     if (inv.security_amount > 0) items.push({ billType: 'Security', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.security_amount), paidAt: inv.paid_at || undefined });
-    if (items.length === 0) { toast.error('Nothing to download'); return; }
+    if (items.length === 0) { toast.error(t('ui.nothingDownload')); return; }
     generateCombinedReceiptPdf({
       tenantName: apt?.tenant_name || 'Tenant',
       unitLabel: apt?.label || '-',
@@ -287,29 +291,29 @@ const UtilityInvoices = () => {
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const statusBadge = (s: string) => {
-    if (s === 'paid') return <Badge className="bg-success text-success-foreground">Paid</Badge>;
-    if (s === 'sent') return <Badge variant="secondary">Sent</Badge>;
-    return <Badge variant="outline">Draft</Badge>;
+    if (s === 'paid') return <Badge className="bg-success text-success-foreground">{t('ui.paid')}</Badge>;
+    if (s === 'sent') return <Badge variant="secondary">{t('ui.sent')}</Badge>;
+    return <Badge variant="outline">{t('ui.draft')}</Badge>;
   };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
         <Receipt className="w-6 h-6 text-primary" />
-        Utility Invoices
+        {t('ui.title')}
       </h1>
 
       {/* Editor */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Create / Edit Invoice</CardTitle>
+          <CardTitle className="text-base">{t('ui.createEdit')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <Label>Apartment</Label>
+              <Label>{t('nav.apartments')}</Label>
               <Select value={aptId} onValueChange={setAptId}>
-                <SelectTrigger><SelectValue placeholder="Select apartment" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('bill.selectApt')} /></SelectTrigger>
                 <SelectContent>
                   {apartments.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.label}{a.tenant_name ? ` — ${a.tenant_name}` : ''}</SelectItem>
@@ -318,16 +322,16 @@ const UtilityInvoices = () => {
               </Select>
             </div>
             <div>
-              <Label>Month</Label>
+              <Label>{t('filter.month')}</Label>
               <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                  {tMonths.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Year</Label>
+              <Label>{t('filter.year')}</Label>
               <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -339,47 +343,47 @@ const UtilityInvoices = () => {
 
           <Button onClick={loadDraft} variant="outline" disabled={!aptId || saving}>
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Load / Start Draft
+            {t('ui.loadDraft')}
           </Button>
 
           {editing && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              Editing existing invoice {statusBadge(editing.status)}
+              {t('ui.editingExisting')} {statusBadge(editing.status)}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-border">
             <div className="space-y-2">
-              <Label className="flex items-center gap-1"><Zap className="w-4 h-4 text-warning" /> Electricity</Label>
-              <Input type="number" placeholder="kWh" value={kwh} onChange={(e) => setKwh(e.target.value)} />
-              <Input type="number" placeholder="Rate (Birr/kWh)" value={rate} onChange={(e) => setRate(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Total: {electricityTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} Birr</p>
+              <Label className="flex items-center gap-1"><Zap className="w-4 h-4 text-warning" /> {t('type.electricity')}</Label>
+              <Input type="number" placeholder={t('ui.kwh')} value={kwh} onChange={(e) => setKwh(e.target.value)} />
+              <Input type="number" placeholder={t('ui.rate')} value={rate} onChange={(e) => setRate(e.target.value)} />
+              <p className="text-xs text-muted-foreground">{t('ui.total')}: {electricityTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t('common.birr')}</p>
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-1"><Droplets className="w-4 h-4 text-info" /> Water</Label>
-              <Input type="number" placeholder="Amount" value={waterAmount} onChange={(e) => setWaterAmount(e.target.value)} />
+              <Label className="flex items-center gap-1"><Droplets className="w-4 h-4 text-info" /> {t('type.water')}</Label>
+              <Input type="number" placeholder={t('ui.amount')} value={waterAmount} onChange={(e) => setWaterAmount(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-primary" /> Security</Label>
-              <Input type="number" placeholder="Amount" value={securityAmount} onChange={(e) => setSecurityAmount(e.target.value)} />
+              <Label className="flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-primary" /> {t('type.security')}</Label>
+              <Input type="number" placeholder={t('ui.amount')} value={securityAmount} onChange={(e) => setSecurityAmount(e.target.value)} />
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-border pt-3 flex-wrap gap-3">
-            <p className="text-lg font-semibold">Grand Total: <span className="gold-text-gradient">{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} Birr</span></p>
+            <p className="text-lg font-semibold">{t('ui.grandTotal')}: <span className="gold-text-gradient">{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t('common.birr')}</span></p>
             <div className="flex items-center gap-2 flex-wrap">
               <Button onClick={handleSave} disabled={saving || !aptId} className="gold-gradient text-card">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Save
+                {t('apt.save')}
               </Button>
               {editing && editing.status === 'draft' && (
                 <Button variant="outline" onClick={() => setStatus(editing, 'sent')}>
-                  <Send className="w-4 h-4 mr-2" /> Mark Sent
+                  <Send className="w-4 h-4 mr-2" /> {t('ui.markSent')}
                 </Button>
               )}
               {editing && editing.status !== 'paid' && (
                 <Button variant="outline" onClick={() => setStatus(editing, 'paid')}>
-                  <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
+                  <CheckCircle className="w-4 h-4 mr-2" /> {t('ui.markPaid')}
                 </Button>
               )}
               {editing && (
@@ -395,48 +399,48 @@ const UtilityInvoices = () => {
       {/* List */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-base">Saved Invoices</CardTitle>
+          <CardTitle className="text-base">{t('ui.savedInvoices')}</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={filterApt} onValueChange={(v) => { setFilterApt(v); setPage(1); }}>
               <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All apartments</SelectItem>
+                <SelectItem value="all">{t('filter.allApartments')}</SelectItem>
                 {apartments.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="all">{t('filter.allStatuses')}</SelectItem>
+                <SelectItem value="draft">{t('ui.draft')}</SelectItem>
+                <SelectItem value="sent">{t('ui.sent')}</SelectItem>
+                <SelectItem value="paid">{t('ui.paid')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground text-center py-8">Loading...</p>
+            <p className="text-muted-foreground text-center py-8">{t('common.loading')}</p>
           ) : pageItems.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No invoices yet</p>
+            <p className="text-muted-foreground text-center py-8">{t('ui.noInvoices')}</p>
           ) : (
             <div className="space-y-2">
               {pageItems.map((inv) => (
                 <div key={inv.id} className="flex items-center justify-between border border-border rounded-lg p-3 gap-3 flex-wrap">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {aptMap[inv.apartment_id]?.label || '-'} — {MONTHS[inv.month - 1]} {inv.year}
+                      {aptMap[inv.apartment_id]?.label || '-'} — {tMonths[inv.month - 1]} {inv.year}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {aptMap[inv.apartment_id]?.tenant_name || '—'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold">{Number(inv.total).toLocaleString()} Birr</span>
+                    <span className="font-semibold">{Number(inv.total).toLocaleString()} {t('common.birr')}</span>
                     {statusBadge(inv.status)}
                     <Button size="sm" variant="ghost" onClick={() => { setAptId(inv.apartment_id); setMonth(inv.month); setYear(inv.year); setEditing(inv); /* trigger fetch fields */ setTimeout(loadDraft, 0); }}>
-                      Edit
+                      {t('apt.edit')}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => downloadInvoice(inv)}>
                       <Download className="w-4 h-4" />
@@ -450,7 +454,7 @@ const UtilityInvoices = () => {
           {filtered.length > PAGE_SIZE && (
             <div className="flex items-center justify-between pt-4">
               <p className="text-xs text-muted-foreground">
-                Page {currentPage} of {totalPages} · {filtered.length} invoice{filtered.length === 1 ? '' : 's'}
+                {t('common.page')} {currentPage} {t('common.of')} {totalPages} · {filtered.length}
               </p>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
