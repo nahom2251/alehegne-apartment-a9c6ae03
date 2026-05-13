@@ -47,7 +47,7 @@ const Auth = () => {
       if (error) toast.error(error.message);
     } else if (view === 'register') {
       if (!fullName.trim()) {
-        toast.error('Please enter your full name');
+        toast.error(t('auth.enterFullName'));
         setSubmitting(false);
         return;
       }
@@ -55,7 +55,7 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Account created! Please check your email to confirm.');
+        toast.success(t('auth.accountCreated'));
       }
     } else if (view === 'forgot') {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -64,14 +64,14 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Password reset link sent! Check your email.');
+        toast.success(t('auth.passwordResetSent'));
       }
     } else if (view === 'reset') {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Password updated successfully!');
+        toast.success(t('auth.passwordUpdated'));
         setView('login');
         window.location.hash = '';
       }
@@ -89,10 +89,10 @@ const Auth = () => {
           </div>
           <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Send Reset Link
+            {t('auth.sendResetLink')}
           </Button>
           <button type="button" onClick={() => setView('login')} className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto">
-            <ArrowLeft className="w-3 h-3" /> Back to Login
+            <ArrowLeft className="w-3 h-3" /> {t('auth.backToLogin')}
           </button>
         </form>
       );
@@ -102,13 +102,13 @@ const Auth = () => {
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground">New Password</label>
+            <label className="text-sm font-medium text-foreground">{t('auth.newPassword')}</label>
             <div className="relative mt-1">
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                placeholder={t('auth.enterNewPassword')}
                 required
                 minLength={6}
               />
@@ -119,7 +119,7 @@ const Auth = () => {
           </div>
           <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Update Password
+            {t('auth.updatePassword')}
           </Button>
         </form>
       );
@@ -157,10 +157,10 @@ const Auth = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)} />
-              <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">Remember me</label>
+              <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">{t('auth.rememberMe')}</label>
             </div>
             <button type="button" onClick={() => setView('forgot')} className="text-sm text-primary hover:underline">
-              Forgot password?
+              {t('auth.forgotPassword')}
             </button>
           </div>
         )}
@@ -173,14 +173,14 @@ const Auth = () => {
   };
 
   const getTitle = () => {
-    if (view === 'forgot') return 'Reset Password';
-    if (view === 'reset') return 'Set New Password';
+    if (view === 'forgot') return t('auth.resetTitle');
+    if (view === 'reset') return t('auth.setNewTitle');
     return t('app.short');
   };
 
   const getSubtitle = () => {
-    if (view === 'forgot') return 'Enter your email to receive a reset link';
-    if (view === 'reset') return 'Choose a strong new password';
+    if (view === 'forgot') return t('auth.forgotPasswordMsg');
+    if (view === 'reset') return t('auth.chooseStrong');
     return t('app.name');
   };
 
