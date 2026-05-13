@@ -89,25 +89,60 @@ const RentBilling = () => {
     const moveIn = new Date(selectedAptData.move_in_date);
     const rentAmount = selectedAptData.monthly_rent;
 
-    // Find the next unbilled month starting from move-in date
-    // Check existing bills for this apartment
+    // Load existing bills + apartment's recorded paid count
     const { data: existingBills } = await supabase
       .from('rent_bills')
-      .select('month, year')
+      .select('month, year, is_paid')
       .eq('apartment_id', selectedApartment);
 
     const existingSet = new Set(
       (existingBills || []).map(b => `${b.year}-${b.month}`)
     );
+    const existingPaidCount = (existingBills || []).filter(b => b.is_paid).length;
 
-    // Start from move-in month, find first unbilled month
-    let startDate = new Date(moveIn.getFullYear(), moveIn.getMonth(), 1);
-    while (existingSet.has(`${startDate.getFullYear()}-${startDate.getMonth() + 1}`)) {
-      startDate = addMonths(startDate, 1);
+    // Pull current rent_paid_months from the apartment (source of truth for initial payment)
+    const { data: aptRow } = await supabase
+      .from('apartments')
+      .select('rent_paid_months')
+      .eq('id', selectedApartment)
+      .single();
+    const recordedPaid = aptRow?.rent_paid_months || 0;
+
+    const billsToInsert: any[] = [];
+    const nowIso = new Date().toISOString();
+
+    // Backfill: if the apartment claims more paid months than there are paid bill rows,
+    // create the missing initial paid bills starting from move-in date.
+    if (recordedPaid > existingPaidCount) {
+      const missing = recordedPaid - existingPaidCount;
+      let d = new Date(moveIn.getFullYear(), moveIn.getMonth(), 1);
+      let added = 0;
+      while (added < missing) {
+        const m = d.getMonth() + 1;
+        const y = d.getFullYear();
+        const key = `${y}-${m}`;
+        if (!existingSet.has(key)) {
+          billsToInsert.push({
+            apartment_id: selectedApartment,
+            month: m,
+            year: y,
+            amount: rentAmount,
+            is_paid: true,
+            paid_at: nowIso,
+          });
+          existingSet.add(key);
+          added++;
+        }
+        d = addMonths(d, 1);
+      }
     }
 
-    const billsToInsert = [];
-    let currentDate = startDate;
+    // Now find the first month after all known bills and add the new payment there
+    let currentDate = new Date(moveIn.getFullYear(), moveIn.getMonth(), 1);
+    while (existingSet.has(`${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`)) {
+      currentDate = addMonths(currentDate, 1);
+    }
+
     for (let i = 0; i < months; i++) {
       const m = currentDate.getMonth() + 1;
       const y = currentDate.getFullYear();
@@ -119,7 +154,7 @@ const RentBilling = () => {
           year: y,
           amount: rentAmount,
           is_paid: true,
-          paid_at: new Date().toISOString(),
+          paid_at: nowIso,
         });
         existingSet.add(key);
       }
