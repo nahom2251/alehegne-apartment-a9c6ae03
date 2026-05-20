@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, CheckCircle, XCircle, Loader2, Trash2, KeyRound, Building2 } from 'lucide-react';
+import { Users, CheckCircle, XCircle, Loader2, Trash2, KeyRound, Building2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserProfile {
@@ -28,11 +28,20 @@ interface TenantInfo {
   apartment_id: string;
 }
 
+interface ResetRequest {
+  id: string;
+  email: string;
+  user_id: string | null;
+  status: string;
+  created_at: string;
+}
+
 const UserManagement = () => {
   const { t } = useLanguage();
   const { isSuperAdmin, session } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [tenants, setTenants] = useState<TenantInfo[]>([]);
+  const [resetRequests, setResetRequests] = useState<ResetRequest[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
 
   const fetchUsers = async () => {
@@ -72,7 +81,28 @@ const UserManagement = () => {
     }
   };
 
-  useEffect(() => { fetchUsers(); fetchTenants(); }, []);
+  const fetchResetRequests = async () => {
+    const { data } = await supabase
+      .from('password_reset_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (data) setResetRequests(data as ResetRequest[]);
+  };
+
+  useEffect(() => { fetchUsers(); fetchTenants(); fetchResetRequests(); }, []);
+
+  const reviewReset = async (id: string, status: 'approved' | 'rejected') => {
+    setLoading(id);
+    const { error } = await supabase
+      .from('password_reset_requests')
+      .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: session?.user.id })
+      .eq('id', id);
+    setLoading(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(status === 'approved' ? 'Request approved. User can now reset their password.' : 'Request rejected.');
+    fetchResetRequests();
+  };
 
   const updateStatus = async (userId: string, status: 'approved' | 'rejected') => {
     setLoading(userId);
@@ -117,6 +147,14 @@ const UserManagement = () => {
         <TabsList>
           <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> {t('nav.users')}</TabsTrigger>
           <TabsTrigger value="tenants" className="gap-1.5"><Building2 className="w-4 h-4" /> {t('admin.tenants')}</TabsTrigger>
+          <TabsTrigger value="resets" className="gap-1.5">
+            <ShieldAlert className="w-4 h-4" /> Password Resets
+            {resetRequests.filter(r => r.status === 'pending').length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                {resetRequests.filter(r => r.status === 'pending').length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* Users Tab */}
@@ -190,6 +228,44 @@ const UserManagement = () => {
               </Card>
             ))}
             {tenants.length === 0 && <p className="col-span-full text-center text-muted-foreground py-8">{t('um.noTenants')}</p>}
+          </div>
+        </TabsContent>
+
+        {/* Password Reset Requests */}
+        <TabsContent value="resets">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {resetRequests.map((r) => (
+              <Card key={r.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-sm">{r.email}</CardTitle>
+                    {r.status === 'pending' && <Badge variant="secondary">Pending</Badge>}
+                    {r.status === 'approved' && <Badge className="bg-success">Approved</Badge>}
+                    {r.status === 'rejected' && <Badge variant="destructive">Rejected</Badge>}
+                    {r.status === 'used' && <Badge variant="outline">Used</Badge>}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString()}
+                  </p>
+                  {r.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => reviewReset(r.id, 'approved')} disabled={loading === r.id} className="flex-1 bg-success hover:bg-success/90 text-card">
+                        {loading === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => reviewReset(r.id, 'rejected')} disabled={loading === r.id} className="flex-1">
+                        <XCircle className="w-3 h-3 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+            {resetRequests.length === 0 && (
+              <p className="col-span-full text-center text-muted-foreground py-8">No password reset requests.</p>
+            )}
           </div>
         </TabsContent>
       </Tabs>
