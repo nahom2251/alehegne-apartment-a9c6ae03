@@ -25,14 +25,6 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const { t } = useLanguage();
 
-  // Check for recovery hash on mount
-  useState(() => {
-    const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      setView('reset');
-    }
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -58,22 +50,25 @@ const Auth = () => {
         toast.success(t('auth.accountCreated'));
       }
     } else if (view === 'forgot') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}`,
-      });
+      // Submit a reset request that the super admin must approve
+      const { error } = await supabase.rpc('submit_password_reset_request', { _email: email });
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success(t('auth.passwordResetSent'));
+        toast.success('Reset request submitted. The super admin will review it shortly.');
+        setView('login');
       }
     } else if (view === 'reset') {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        toast.error(error.message);
+      // Complete reset via edge function (requires approved request)
+      const { data, error } = await supabase.functions.invoke('complete-password-reset', {
+        body: { email, new_password: newPassword },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || error?.message || 'Failed to reset password');
       } else {
         toast.success(t('auth.passwordUpdated'));
         setView('login');
-        window.location.hash = '';
+        setNewPassword('');
       }
     }
     setSubmitting(false);
@@ -83,17 +78,25 @@ const Auth = () => {
     if (view === 'forgot') {
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Submit a request to reset your password. The super admin will review and approve it.
+          </p>
           <div>
             <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
           </div>
           <Button type="submit" className="w-full gold-gradient text-card font-semibold" disabled={submitting}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {t('auth.sendResetLink')}
+            Submit request
           </Button>
-          <button type="button" onClick={() => setView('login')} className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto">
-            <ArrowLeft className="w-3 h-3" /> {t('auth.backToLogin')}
-          </button>
+          <div className="flex justify-between text-xs">
+            <button type="button" onClick={() => setView('login')} className="flex items-center gap-1 text-primary hover:underline">
+              <ArrowLeft className="w-3 h-3" /> {t('auth.backToLogin')}
+            </button>
+            <button type="button" onClick={() => setView('reset')} className="text-primary hover:underline">
+              Already approved? Set new password
+            </button>
+          </div>
         </form>
       );
     }
@@ -101,6 +104,13 @@ const Auth = () => {
     if (view === 'reset') {
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Enter your email and a new password. This only works after the super admin approves your reset request.
+          </p>
+          <div>
+            <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.email')} className="mt-1" required />
+          </div>
           <div>
             <label className="text-sm font-medium text-foreground">{t('auth.newPassword')}</label>
             <div className="relative mt-1">
@@ -121,6 +131,9 @@ const Auth = () => {
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {t('auth.updatePassword')}
           </Button>
+          <button type="button" onClick={() => setView('login')} className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto">
+            <ArrowLeft className="w-3 h-3" /> {t('auth.backToLogin')}
+          </button>
         </form>
       );
     }
