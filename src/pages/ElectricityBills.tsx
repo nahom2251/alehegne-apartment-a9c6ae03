@@ -49,7 +49,7 @@ const ElectricityBills = () => {
     const step2 = step1 + (0.15 * step1);
     const step3 = step2 + 10;
     const total = step3 + (0.005 * step3);
-    return total;
+    return Math.round(total);
   };
 
   const handleAdd = async () => {
@@ -221,7 +221,7 @@ const ElectricityBills = () => {
             </div>
             {form.kwh && form.rate && (
               <div className="p-3 rounded-lg bg-muted text-sm">
-                <p className="font-semibold">{t('bill.total')}: {calculateTotal(Number(form.kwh), Number(form.rate)).toFixed(2)} {t('common.birr')}</p>
+                <p className="font-semibold">{t('bill.total')}: {calculateTotal(Number(form.kwh), Number(form.rate)).toLocaleString()} {t('common.birr')}</p>
               </div>
             )}
           </div>
