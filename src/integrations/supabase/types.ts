@@ -127,6 +127,39 @@ export type Database = {
           },
         ]
       }
+      password_reset_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_proofs: {
         Row: {
           amount: number | null
@@ -484,6 +517,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_password_reset_approved: {
+        Args: { _email: string }
+        Returns: boolean
+      }
       clear_must_change_password: { Args: never; Returns: undefined }
       get_available_apartments: {
         Args: never
@@ -516,6 +553,10 @@ export type Database = {
       register_tenant: {
         Args: { _apartment_id: string; _phone: string }
         Returns: undefined
+      }
+      submit_password_reset_request: {
+        Args: { _email: string }
+        Returns: string
       }
     }
     Enums: {
