@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -104,10 +104,50 @@ const AuthenticatedApp = () => {
   );
 };
 
-// Sits inside AuthProvider so auth initializes immediately on page load
+// Sits inside AuthProvider so auth initializes immediately on page load.
+// Splash only shows on a true cold start (first load of a tab session), never
+// on client-side route changes. If the user backgrounds the tab for more than
+// AWAY_TIMEOUT_MS, we sign them out and force a full reload so they see the
+// splash + login flow again.
+const AWAY_TIMEOUT_MS = 15_000;
+const SPLASH_SESSION_KEY = 'as_apt_splash_shown';
+
 const AppWithSplash = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const handleSplashComplete = useCallback(() => setShowSplash(false), []);
+  const { signOut } = useAuth();
+  const [showSplash, setShowSplash] = useState(
+    () => typeof window !== 'undefined' && !sessionStorage.getItem(SPLASH_SESSION_KEY)
+  );
+
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem(SPLASH_SESSION_KEY, '1');
+    setShowSplash(false);
+  }, []);
+
+  // Force re-auth + splash when the tab has been hidden for more than 15s.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+
+    const onVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === 'visible' && hiddenAt !== null) {
+        const away = Date.now() - hiddenAt;
+        hiddenAt = null;
+        if (away >= AWAY_TIMEOUT_MS) {
+          sessionStorage.removeItem(SPLASH_SESSION_KEY);
+          try {
+            await signOut();
+          } catch {
+            // ignore — we are about to reload anyway
+          }
+          window.location.replace('/login');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [signOut]);
 
   return (
     <>
