@@ -13,6 +13,7 @@ const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may',
 const PAGE_SIZE = 15;
 
 interface Apartment { id: string; label: string; tenant_name: string | null; }
+interface ApartmentRent { id: string; monthly_rent: number | null; rent_paid_months: number | null; is_occupied: boolean | null; }
 
 interface PaymentRow {
   key: string;
@@ -46,6 +47,7 @@ const TenantPayments = () => {
     }
   };
   const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [aptRent, setAptRent] = useState<ApartmentRent[]>([]);
   const [rows, setRows] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [aptFilter, setAptFilter] = useState<string>('all');
@@ -57,13 +59,16 @@ const TenantPayments = () => {
     const load = async () => {
       setLoading(true);
       const [{ data: apts }, { data: rent }, { data: elec }, { data: water }, { data: sec }] = await Promise.all([
-        supabase.from('apartments').select('id, label, tenant_name').order('floor').order('position'),
+        supabase.from('apartments').select('id, label, tenant_name, monthly_rent, rent_paid_months, is_occupied').order('floor').order('position'),
         supabase.from('rent_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
         supabase.from('electricity_bills').select('id, apartment_id, tenant_name, month, year, total, is_paid, paid_at, created_at'),
         supabase.from('water_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
         supabase.from('security_bills').select('id, apartment_id, tenant_name, month, year, amount, is_paid, paid_at, created_at'),
       ]);
-      if (apts) setApartments(apts);
+      if (apts) {
+        setApartments(apts.map((a: any) => ({ id: a.id, label: a.label, tenant_name: a.tenant_name })));
+        setAptRent(apts.map((a: any) => ({ id: a.id, monthly_rent: a.monthly_rent, rent_paid_months: a.rent_paid_months, is_occupied: a.is_occupied })));
+      }
       const merged: PaymentRow[] = [];
       (rent || []).forEach((r: any) => merged.push({ key: `rent-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'rent', month: r.month, year: r.year, amount: Number(r.amount || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
       (elec || []).forEach((r: any) => merged.push({ key: `elec-${r.id}`, apartment_id: r.apartment_id, tenant_name: r.tenant_name, type: 'electricity', month: r.month, year: r.year, amount: Number(r.total || 0), is_paid: !!r.is_paid, paid_at: r.paid_at, created_at: r.created_at }));
@@ -104,12 +109,43 @@ const TenantPayments = () => {
   const currentPage = Math.min(page, totalPages);
   const pageRows = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  // Summary
+  // Summary — aligned with Revenue page:
+  // Rent collected is derived from apartments (monthly_rent × rent_paid_months),
+  // not from rent_bills, so totals match the Revenue page.
   const totals = useMemo(() => {
-    const paid = Math.round(filtered.filter((r) => r.is_paid).reduce((s, r) => s + r.amount, 0));
-    const pending = Math.round(filtered.filter((r) => !r.is_paid).reduce((s, r) => s + r.amount, 0));
-    return { paid, pending, count: filtered.length };
-  }, [filtered]);
+    const includeType = (t: PaymentRow['type']) => typeFilter === 'all' || typeFilter === t;
+    const aptAllowed = (id: string) => aptFilter === 'all' || aptFilter === id;
+
+    let paid = 0;
+    let pending = 0;
+
+    // Rent: from apartments (matches Revenue)
+    if (includeType('rent') && (statusFilter === 'all' || statusFilter === 'paid')) {
+      paid += aptRent
+        .filter((a) => a.is_occupied && aptAllowed(a.id))
+        .reduce((s, a) => s + (Number(a.monthly_rent) || 0) * (Number(a.rent_paid_months) || 0), 0);
+    }
+    // Rent pending is treated as 0 to mirror Revenue
+
+    // Electricity / Water / Security from bills
+    const sumBills = (type: PaymentRow['type']) => {
+      if (!includeType(type)) return;
+      rows.forEach((r) => {
+        if (r.type !== type) return;
+        if (!aptAllowed(r.apartment_id)) return;
+        if (r.is_paid) {
+          if (statusFilter === 'all' || statusFilter === 'paid') paid += r.amount;
+        } else {
+          if (statusFilter === 'all' || statusFilter === 'pending') pending += r.amount;
+        }
+      });
+    };
+    sumBills('electricity');
+    sumBills('water');
+    sumBills('security');
+
+    return { paid: Math.round(paid), pending: Math.round(pending), count: filtered.length };
+  }, [rows, aptRent, aptFilter, typeFilter, statusFilter, filtered.length]);
 
   const handleDownloadPdf = () => {
     const tenantLabel = aptFilter === 'all' ? 'all' : (aptMap[aptFilter]?.label || 'all');
