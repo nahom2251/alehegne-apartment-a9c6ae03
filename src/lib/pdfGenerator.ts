@@ -456,6 +456,7 @@ interface TenantPaymentRow {
 interface TenantPaymentsReportData {
   rows: TenantPaymentRow[];
   filters?: { tenant?: string; type?: string; status?: string };
+  totals?: { paid: number; pending: number; count: number };
 }
 
 export const generateTenantPaymentsPdf = (data: TenantPaymentsReportData) => {
@@ -507,9 +508,15 @@ export const generateTenantPaymentsPdf = (data: TenantPaymentsReportData) => {
     }
   }
 
-  // Totals
-  const paidTotal = data.rows.filter(r => r.isPaid).reduce((s, r) => s + r.amount, 0);
-  const pendingTotal = data.rows.filter(r => !r.isPaid).reduce((s, r) => s + r.amount, 0);
+  // Totals — prefer caller-provided totals (aligned with Revenue page),
+  // fall back to summing rows when not provided.
+  const paidTotal = Math.round(
+    data.totals?.paid ?? data.rows.filter(r => r.isPaid).reduce((s, r) => s + r.amount, 0)
+  );
+  const pendingTotal = Math.round(
+    data.totals?.pending ?? data.rows.filter(r => !r.isPaid).reduce((s, r) => s + r.amount, 0)
+  );
+  const recordsTotal = data.totals?.count ?? data.rows.length;
 
   y += 4;
   doc.setFillColor(255, 249, 235);
@@ -519,7 +526,7 @@ export const generateTenantPaymentsPdf = (data: TenantPaymentsReportData) => {
   doc.setFont('helvetica', 'bold');
   doc.text(`Collected: ${paidTotal.toLocaleString()} Birr`, innerLeft, y + 11);
   doc.text(`Pending: ${pendingTotal.toLocaleString()} Birr`, innerLeft + 70, y + 11);
-  doc.text(`Records: ${data.rows.length}`, innerRight, y + 11, { align: 'right' });
+  doc.text(`Records: ${recordsTotal}`, innerRight, y + 11, { align: 'right' });
   y += 24;
 
   // Table header
@@ -559,7 +566,7 @@ export const generateTenantPaymentsPdf = (data: TenantPaymentsReportData) => {
     if (r.isPaid) doc.setTextColor(34, 139, 34); else doc.setTextColor(200, 50, 50);
     doc.text(r.isPaid ? 'Paid' : 'Pending', colStatus, y);
     doc.setTextColor(50, 50, 50);
-    doc.text(r.amount.toLocaleString(), colAmountRight, y, { align: 'right' });
+    doc.text(Math.round(r.amount).toLocaleString(), colAmountRight, y, { align: 'right' });
     y += 7;
   });
 
