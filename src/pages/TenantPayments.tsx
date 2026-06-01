@@ -161,6 +161,7 @@ const TenantPayments = () => {
         paidAt: r.paid_at,
       })),
       filters: { tenant: tenantLabel, type: typeFilter, status: statusFilter },
+      totals: { paid: totals.paid, pending: totals.pending, count: totals.count },
     });
   };
 
