@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,19 +8,18 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
 import AppLayout from "@/components/AppLayout";
-import Index from "@/pages/Index";
-import Auth from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
-import Apartments from "@/pages/Apartments";
-import ElectricityBills from "@/pages/ElectricityBills";
-import WaterBills from "@/pages/WaterBills";
-import SecurityBills from "@/pages/SecurityBills";
-import RentBilling from "@/pages/RentBilling";
-import Revenue from "@/pages/Revenue";
-import UtilityInvoices from "@/pages/UtilityInvoices";
-import UserManagement from "@/pages/UserManagement";
-import TenantPayments from "@/pages/TenantPayments";
-import ResetPassword from "@/pages/ResetPassword";
+const Auth = lazy(() => import("@/pages/Auth"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Apartments = lazy(() => import("@/pages/Apartments"));
+const ElectricityBills = lazy(() => import("@/pages/ElectricityBills"));
+const WaterBills = lazy(() => import("@/pages/WaterBills"));
+const SecurityBills = lazy(() => import("@/pages/SecurityBills"));
+const RentBilling = lazy(() => import("@/pages/RentBilling"));
+const Revenue = lazy(() => import("@/pages/Revenue"));
+const UtilityInvoices = lazy(() => import("@/pages/UtilityInvoices"));
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+const TenantPayments = lazy(() => import("@/pages/TenantPayments"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 const queryClient = new QueryClient();
 
@@ -77,6 +76,7 @@ const PendingApprovalRoute = () => {
 
 const AuthenticatedApp = () => {
   return (
+    <Suspense fallback={<LoadingScreen />}>
     <Routes>
       <Route path="/" element={<AuthRedirect />} />
       <Route path="/login" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
@@ -101,6 +101,7 @@ const AuthenticatedApp = () => {
 
       <Route path="*" element={<AuthRedirect />} />
     </Routes>
+    </Suspense>
   );
 };
 
