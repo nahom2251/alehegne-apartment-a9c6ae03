@@ -109,7 +109,7 @@ const AuthenticatedApp = () => {
 // on client-side route changes. If the user backgrounds the tab for more than
 // AWAY_TIMEOUT_MS, we sign them out and force a full reload so they see the
 // splash + login flow again.
-const AWAY_TIMEOUT_MS = 15_000;
+const AWAY_TIMEOUT_MS = 180_000;
 const SPLASH_SESSION_KEY = 'as_apt_splash_shown';
 
 const AppWithSplash = () => {
@@ -123,7 +123,7 @@ const AppWithSplash = () => {
     setShowSplash(false);
   }, []);
 
-  // Force re-auth + splash when the tab has been hidden for more than 15s.
+  // Force re-auth + splash when the tab has been hidden for more than 3 minutes.
   useEffect(() => {
     let hiddenAt: number | null = null;
 
