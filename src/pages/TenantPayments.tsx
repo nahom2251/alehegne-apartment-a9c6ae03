@@ -106,8 +106,8 @@ const TenantPayments = () => {
 
   // Summary
   const totals = useMemo(() => {
-    const paid = filtered.filter((r) => r.is_paid).reduce((s, r) => s + r.amount, 0);
-    const pending = filtered.filter((r) => !r.is_paid).reduce((s, r) => s + r.amount, 0);
+    const paid = Math.round(filtered.filter((r) => r.is_paid).reduce((s, r) => s + r.amount, 0));
+    const pending = Math.round(filtered.filter((r) => !r.is_paid).reduce((s, r) => s + r.amount, 0));
     return { paid, pending, count: filtered.length };
   }, [filtered]);
 
@@ -144,11 +144,11 @@ const TenantPayments = () => {
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4 pb-4">
           <p className="text-xs text-muted-foreground">{t('tp.collected')}</p>
-          <p className="text-lg font-bold text-success">{totals.paid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          <p className="text-lg font-bold text-success">{totals.paid.toLocaleString()}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
           <p className="text-xs text-muted-foreground">{t('tp.pending')}</p>
-          <p className="text-lg font-bold text-destructive">{totals.pending.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          <p className="text-lg font-bold text-destructive">{totals.pending.toLocaleString()}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
           <p className="text-xs text-muted-foreground">{t('tp.records')}</p>
@@ -219,7 +219,7 @@ const TenantPayments = () => {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold">{r.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t('common.birr')}</p>
+                      <p className="text-sm font-bold">{Math.round(r.amount).toLocaleString()} {t('common.birr')}</p>
                       {r.is_paid ? (
                         <Badge className="bg-success text-success-foreground text-xs">{t('bill.paid')}</Badge>
                       ) : (
