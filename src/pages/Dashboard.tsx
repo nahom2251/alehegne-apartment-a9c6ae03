@@ -119,7 +119,15 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {apartments.map((apt) => {
+            {loading && apartments.length === 0
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-lg border border-border bg-card space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))
+              : apartments.map((apt) => {
               const status = getRentStatus(apt);
               return (
                 <div
