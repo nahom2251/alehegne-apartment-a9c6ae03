@@ -112,17 +112,44 @@ const AuthenticatedApp = () => {
 // splash + login flow again.
 const AWAY_TIMEOUT_MS = 180_000;
 const SPLASH_SESSION_KEY = 'as_apt_splash_shown';
+const LAST_ACTIVE_KEY = 'as_apt_last_active';
 
 const AppWithSplash = () => {
   const { signOut } = useAuth();
-  const [showSplash, setShowSplash] = useState(
-    () => typeof window !== 'undefined' && !sessionStorage.getItem(SPLASH_SESSION_KEY)
-  );
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    // Already shown in this tab session — don't show again on refresh
+    if (sessionStorage.getItem(SPLASH_SESSION_KEY)) return false;
+    // App was closed recently (< 3 min) — resume without splash
+    const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
+    if (lastActive) {
+      const away = Date.now() - parseInt(lastActive, 10);
+      if (away < AWAY_TIMEOUT_MS) {
+        sessionStorage.setItem(SPLASH_SESSION_KEY, '1');
+        return false;
+      }
+    }
+    return true;
+  });
 
   const handleSplashComplete = useCallback(() => {
     sessionStorage.setItem(SPLASH_SESSION_KEY, '1');
+    localStorage.removeItem(LAST_ACTIVE_KEY);
     setShowSplash(false);
   }, []);
+
+  const markLastActive = useCallback(() => {
+    localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', markLastActive);
+    window.addEventListener('pagehide', markLastActive);
+    return () => {
+      window.removeEventListener('beforeunload', markLastActive);
+      window.removeEventListener('pagehide', markLastActive);
+    };
+  }, [markLastActive]);
 
   // Force re-auth + splash when the tab has been hidden for more than 3 minutes.
   useEffect(() => {
@@ -131,11 +158,13 @@ const AppWithSplash = () => {
     const onVisibilityChange = async () => {
       if (document.visibilityState === 'hidden') {
         hiddenAt = Date.now();
+        markLastActive();
       } else if (document.visibilityState === 'visible' && hiddenAt !== null) {
         const away = Date.now() - hiddenAt;
         hiddenAt = null;
         if (away >= AWAY_TIMEOUT_MS) {
           sessionStorage.removeItem(SPLASH_SESSION_KEY);
+          localStorage.removeItem(LAST_ACTIVE_KEY);
           try {
             await signOut();
           } catch {
@@ -148,7 +177,7 @@ const AppWithSplash = () => {
 
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [signOut]);
+  }, [signOut, markLastActive]);
 
   return (
     <>
