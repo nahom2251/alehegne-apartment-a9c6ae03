@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Building2, Users, DollarSign, Home, AlertTriangle, CheckCircle } from 'lucide-react';
 import { differenceInDays, addMonths, parseISO } from 'date-fns';
 
@@ -21,21 +22,23 @@ const Dashboard = () => {
   const { isSuperAdmin } = useAuth();
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
-      const { data } = await supabase.from('apartments').select('*').order('floor');
-      if (data) setApartments(data);
-
-      if (isSuperAdmin) {
-        const { count } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-        setPendingCount(count || 0);
-      }
+      const aptPromise = supabase.from('apartments').select('*').order('floor');
+      const pendingPromise = isSuperAdmin
+        ? supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+        : Promise.resolve({ count: 0 } as any);
+      const [aptRes, pendingRes] = await Promise.all([aptPromise, pendingPromise]);
+      if (cancelled) return;
+      if (aptRes.data) setApartments(aptRes.data);
+      setPendingCount((pendingRes as any).count || 0);
+      setLoading(false);
     };
     fetchData();
+    return () => { cancelled = true; };
   }, [isSuperAdmin]);
 
   const occupied = apartments.filter(a => a.is_occupied);
@@ -116,7 +119,15 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {apartments.map((apt) => {
+            {loading && apartments.length === 0
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-lg border border-border bg-card space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))
+              : apartments.map((apt) => {
               const status = getRentStatus(apt);
               return (
                 <div
