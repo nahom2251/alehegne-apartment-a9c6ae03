@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, Zap, Droplets, Building2, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { generateRevenuePdf } from '@/lib/pdfGenerator';
+import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 const COLORS = ['hsl(43, 74%, 49%)', 'hsl(48, 96%, 53%)', 'hsl(200, 80%, 50%)'];
 
@@ -62,14 +63,17 @@ const Revenue = () => {
     { icon: Droplets, label: t('nav.water'), paid: waterRevenue.paid, pending: waterRevenue.pending, color: 'text-info' },
   ];
 
-  const handleDownloadReport = () => {
-    generateRevenuePdf({
+  const handleDownloadReport = async () => {
+    const lang = await pickPdfLanguage();
+    if (!lang) return;
+    await generateRevenuePdf({
       rentPaid: rentRevenue.paid,
       rentPending: rentRevenue.pending,
       elecPaid: elecRevenue.paid,
       elecPending: elecRevenue.pending,
       waterPaid: waterRevenue.paid,
       waterPending: waterRevenue.pending,
+      lang,
     });
   };
 

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Zap, Plus, Loader2, CheckCircle, Download, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBillPdf } from '@/lib/pdfGenerator';
+import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 interface Apartment { id: string; label: string; tenant_name: string | null; is_occupied: boolean | null; }
 interface ElecBill {
@@ -80,12 +81,14 @@ const ElectricityBills = () => {
     fetchData();
   };
 
-  const downloadPdf = (bill: ElecBill) => {
+  const downloadPdf = async (bill: ElecBill) => {
+    const lang = await pickPdfLanguage();
+    if (!lang) return;
     const base = bill.kwh * bill.rate;
     const step1 = base + 16;
     const step2 = step1 + (0.15 * step1);
     const step3 = step2 + 10;
-    generateBillPdf({
+    await generateBillPdf({
       tenantName: bill.apartments?.tenant_name || 'N/A',
       unitLabel: bill.apartments?.label || 'N/A',
       month: MONTHS[bill.month - 1],
@@ -105,6 +108,7 @@ const ElectricityBills = () => {
         'After TV tax': step3.toFixed(2),
         'Control Tax (0.5%)': (0.005 * step3).toFixed(2),
       },
+      lang,
     });
   };
 

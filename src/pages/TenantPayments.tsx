@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronLeft, ChevronRight, Loader2, Users, Home, Zap, Droplets, ShieldCheck, Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { generateTenantPaymentsPdf } from '@/lib/pdfGenerator';
+import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
@@ -147,9 +148,11 @@ const TenantPayments = () => {
     return { paid: Math.round(paid), pending: Math.round(pending), count: filtered.length };
   }, [rows, aptRent, aptFilter, typeFilter, statusFilter, filtered.length]);
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    const lang = await pickPdfLanguage();
+    if (!lang) return;
     const tenantLabel = aptFilter === 'all' ? 'all' : (aptMap[aptFilter]?.label || 'all');
-    generateTenantPaymentsPdf({
+    await generateTenantPaymentsPdf({
       rows: sorted.map((r) => ({
         apartmentLabel: aptMap[r.apartment_id]?.label || '-',
         tenantName: r.tenant_name || aptMap[r.apartment_id]?.tenant_name || '',
@@ -162,6 +165,7 @@ const TenantPayments = () => {
       })),
       filters: { tenant: tenantLabel, type: typeFilter, status: statusFilter },
       totals: { paid: totals.paid, pending: totals.pending, count: totals.count },
+      lang,
     });
   };
 
