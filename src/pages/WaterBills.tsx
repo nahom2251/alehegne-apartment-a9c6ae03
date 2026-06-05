@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Droplets, Plus, Loader2, CheckCircle, Download, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBillPdf } from '@/lib/pdfGenerator';
+import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 interface Apartment { id: string; label: string; tenant_name: string | null; }
 interface WaterBill {
@@ -63,8 +64,10 @@ const WaterBills = () => {
     fetchData();
   };
 
-  const downloadPdf = (bill: WaterBill) => {
-    generateBillPdf({
+  const downloadPdf = async (bill: WaterBill) => {
+    const lang = await pickPdfLanguage();
+    if (!lang) return;
+    await generateBillPdf({
       tenantName: bill.apartments?.tenant_name || 'N/A',
       unitLabel: bill.apartments?.label || 'N/A',
       month: MONTHS[bill.month - 1],
@@ -72,6 +75,7 @@ const WaterBills = () => {
       billType: 'Water',
       amount: bill.amount || 0,
       isPaid: !!bill.is_paid,
+      lang,
     });
   };
 
