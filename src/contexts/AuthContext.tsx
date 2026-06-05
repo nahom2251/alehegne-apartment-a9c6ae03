@@ -49,12 +49,43 @@ const fallbackAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const AUTH_CACHE_KEY = 'as_apt_auth_cache_v1';
+
+type AuthCache = {
+  userId: string;
+  profile: Profile | null;
+  roles: string[];
+};
+
+const readAuthCache = (): AuthCache | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(AUTH_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AuthCache) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeAuthCache = (cache: AuthCache | null) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (cache) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cache));
+    else localStorage.removeItem(AUTH_CACHE_KEY);
+  } catch {
+    // ignore
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const cached = typeof window !== 'undefined' ? readAuthCache() : null;
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [roles, setRoles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null);
+  const [roles, setRoles] = useState<string[]>(cached?.roles ?? []);
+  // Start with loading=false when we have a cached auth state so route guards
+  // can redirect immediately. The real session is validated in the background.
+  const [loading, setLoading] = useState(!cached);
   const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (userId: string) => {
@@ -65,8 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supabase.from('user_roles').select('role').eq('user_id', userId),
       ]);
 
-      setProfile(profileData ? (profileData as Profile) : null);
-      setRoles(rolesData ? rolesData.map((r: UserRole) => r.role) : []);
+      const nextProfile = profileData ? (profileData as Profile) : null;
+      const nextRoles = rolesData ? rolesData.map((r: UserRole) => r.role) : [];
+      setProfile(nextProfile);
+      setRoles(nextRoles);
+      writeAuthCache({ userId, profile: nextProfile, roles: nextRoles });
     } finally {
       setProfileLoading(false);
     }
@@ -114,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           setRoles([]);
+          writeAuthCache(null);
         }
         // Only set loading false here if getSession already finished
         if (!initialLoad) {
@@ -146,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setProfile(null);
     setRoles([]);
+    writeAuthCache(null);
   };
 
   const isSuperAdmin = roles.includes('super_admin');
