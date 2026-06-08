@@ -81,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const cached = typeof window !== 'undefined' ? readAuthCache() : null;
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  // Cached profile/roles are only trusted once the real session confirms the
+  // userId matches. Until then we keep them as a hint but they may be cleared.
   const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null);
   const [roles, setRoles] = useState<string[]>(cached?.roles ?? []);
   // Always start with loading=true until supabase.auth.getSession() resolves.
@@ -113,16 +115,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let initialLoad = true;
+    let lastFetchedUserId: string | null = null;
 
     const initializeAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Drop stale cache if it belonged to a different user
+        if (cached && cached.userId !== session.user.id) {
+          setProfile(null);
+          setRoles([]);
+          writeAuthCache(null);
+        }
+        lastFetchedUserId = session.user.id;
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
         setRoles([]);
+        writeAuthCache(null);
       }
       setLoading(false);
       initialLoad = false;
@@ -140,18 +151,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // onAuthStateChange fires for subsequent events (sign-in/out)
     // Do NOT await inside this callback — it can deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Fire and forget — profile loading is tracked separately
-          fetchProfile(session.user.id);
+          // Only refetch profile when identity actually changes or on explicit
+          // sign-in / user-update events. Skips routine TOKEN_REFRESHED (~hourly)
+          // and INITIAL_SESSION (handled by initializeAuth).
+          const userChanged = lastFetchedUserId !== session.user.id;
+          const shouldFetch =
+            userChanged ||
+            event === 'SIGNED_IN' ||
+            event === 'USER_UPDATED' ||
+            event === 'PASSWORD_RECOVERY';
+          if (shouldFetch) {
+            lastFetchedUserId = session.user.id;
+            fetchProfile(session.user.id);
+          }
         } else {
+          lastFetchedUserId = null;
           setProfile(null);
           setRoles([]);
           writeAuthCache(null);
         }
-        // Only set loading false here if getSession already finished
         if (!initialLoad) {
           setLoading(false);
         }
