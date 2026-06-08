@@ -83,9 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null);
   const [roles, setRoles] = useState<string[]>(cached?.roles ?? []);
-  // Start with loading=false when we have a cached auth state so route guards
-  // can redirect immediately. The real session is validated in the background.
-  const [loading, setLoading] = useState(!cached);
+  // Always start with loading=true until supabase.auth.getSession() resolves.
+  // Otherwise route guards see user=null and redirect to /login before the
+  // session restores, causing a flicker/redirect away from deep links.
+  const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchProfile = async (userId: string) => {
