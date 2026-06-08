@@ -25,11 +25,11 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", caller.id)
-      .in("role", ["super_admin", "admin"])
-      .single();
+      .eq("role", "super_admin")
+      .maybeSingle();
 
     if (!callerRole) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Forbidden: super_admin only" }), { status: 403, headers: corsHeaders });
     }
 
     const { action, user_id } = await req.json();
