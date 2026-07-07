@@ -1,4 +1,4 @@
-const CACHE_NAME = 'as-apt-v5';
+const CACHE_NAME = 'as-apt-v6';
 
 self.addEventListener('install', (event) => {
   // Activate the new SW immediately, don't wait for old tabs to close
@@ -48,10 +48,16 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((res) => {
-          // Cache the latest index for offline fallback
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
-          return res;
+          // Only cache successful HTML responses as the offline fallback.
+          // Never cache a 404/5xx — otherwise refresh keeps showing "not found".
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
+            return res;
+          }
+          // Bad response from server — serve the last known-good index.html
+          // so the SPA router can resolve the route on the client.
+          return caches.match('/index.html').then((cached) => cached || res);
         })
         .catch(async () => {
           // Offline / server error: always return cached index.html so the SPA can boot
