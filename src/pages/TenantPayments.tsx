@@ -184,11 +184,11 @@ const TenantPayments = () => {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4 pb-4">
-          <p className="text-xs text-muted-foreground">{t('tp.collected')}</p>
+          <p className="text-xs text-muted-foreground">{t('tp.collected')} (ETB)</p>
           <p className="text-lg font-bold text-success">{totals.paid.toLocaleString()}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
-          <p className="text-xs text-muted-foreground">{t('tp.pending')}</p>
+          <p className="text-xs text-muted-foreground">{t('tp.pending')} (ETB)</p>
           <p className="text-lg font-bold text-destructive">{totals.pending.toLocaleString()}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4">
