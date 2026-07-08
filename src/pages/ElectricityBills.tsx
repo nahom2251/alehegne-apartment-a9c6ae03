@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Plus, Loader2, CheckCircle, Download, Filter } from 'lucide-react';
+import { Zap, Plus, Loader2, CheckCircle, Download, Filter, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBillPdf } from '@/lib/pdfGenerator';
 import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
@@ -34,6 +34,9 @@ const ElectricityBills = () => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
   const [form, setForm] = useState({ apartment_id: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()), kwh: '', rate: '' });
+  const [editing, setEditing] = useState<ElecBill | null>(null);
+  const [editForm, setEditForm] = useState({ month: '1', year: '', kwh: '', rate: '' });
+  const [deleting, setDeleting] = useState<ElecBill | null>(null);
 
   const fetchData = async () => {
     const { data: apts } = await supabase.from('apartments').select('id, label, tenant_name, is_occupied').eq('is_occupied', true);
@@ -68,10 +71,49 @@ const ElectricityBills = () => {
       kwh, rate, base_cost: baseCost, total,
     });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.code === '23505' ? t('bill.duplicate') : error.message);
+      return;
+    }
     toast.success(t('bill.add'));
     setShowAdd(false);
     setForm({ apartment_id: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()), kwh: '', rate: '' });
+    fetchData();
+  };
+
+  const openEdit = (bill: ElecBill) => {
+    setEditing(bill);
+    setEditForm({ month: String(bill.month), year: String(bill.year), kwh: String(bill.kwh), rate: String(bill.rate) });
+  };
+
+  const handleUpdate = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const kwh = Number(editForm.kwh);
+    const rate = Number(editForm.rate);
+    const total = calculateTotal(kwh, rate);
+    const baseCost = kwh * rate;
+    const { error } = await supabase.from('electricity_bills').update({
+      month: Number(editForm.month),
+      year: Number(editForm.year),
+      kwh, rate, base_cost: baseCost, total,
+    }).eq('id', editing.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.code === '23505' ? t('bill.duplicate') : error.message);
+      return;
+    }
+    toast.success(t('bill.updated'));
+    setEditing(null);
+    fetchData();
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    const { error } = await supabase.from('electricity_bills').delete().eq('id', deleting.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('bill.deleted'));
+    setDeleting(null);
     fetchData();
   };
 
@@ -164,6 +206,12 @@ const ElectricityBills = () => {
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadPdf(bill)} title={bill.is_paid ? t('bill.downloadReceipt') : t('bill.downloadInvoice')}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(bill)} title={t('bill.edit')}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleting(bill)} title={t('bill.delete')}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -234,6 +282,61 @@ const ElectricityBills = () => {
             <Button onClick={handleAdd} disabled={saving} className="gold-gradient text-card">
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} {t('apt.save')}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t('bill.edit')} - {t('nav.electricity')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t('bill.month')}</label>
+                <Select value={editForm.month} onValueChange={v => setEditForm({...editForm, month: v})}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {tMonths.map((m, i) => <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t('bill.year')}</label>
+                <Input type="number" value={editForm.year} onChange={e => setEditForm({...editForm, year: e.target.value})} className="mt-1" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t('bill.kwh')}</label>
+                <Input type="number" value={editForm.kwh} onChange={e => setEditForm({...editForm, kwh: e.target.value})} className="mt-1" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t('bill.rate')}</label>
+                <Input type="number" step="0.01" value={editForm.rate} onChange={e => setEditForm({...editForm, rate: e.target.value})} className="mt-1" />
+              </div>
+            </div>
+            {editForm.kwh && editForm.rate && (
+              <div className="p-3 rounded-lg bg-muted text-sm">
+                <p className="font-semibold">{t('bill.total')}: {calculateTotal(Number(editForm.kwh), Number(editForm.rate)).toLocaleString()} {t('common.birr')}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>{t('apt.cancel')}</Button>
+            <Button onClick={handleUpdate} disabled={saving} className="gold-gradient text-card">
+              {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} {t('apt.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t('bill.delete')}?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('bill.deleteConfirm')}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>{t('apt.cancel')}</Button>
+            <Button variant="destructive" onClick={handleDelete}>{t('bill.delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
