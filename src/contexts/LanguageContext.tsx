@@ -124,6 +124,12 @@ const translations: Translations = {
   'bill.add': { en: 'Add Bill', am: 'ሂሳብ ጨምር' },
   'bill.amount': { en: 'Amount (Birr)', am: 'መጠን (ብር)' },
   'bill.generatePdf': { en: 'Generate PDF', am: 'PDF ፍጠር' },
+  'bill.edit': { en: 'Edit', am: 'አስተካክል' },
+  'bill.delete': { en: 'Delete', am: 'ሰርዝ' },
+  'bill.deleteConfirm': { en: 'This will permanently delete the bill. Are you sure?', am: 'ይህ ሂሳቡን በቋሚነት ይሰርዛል። እርግጠኛ ነዎት?' },
+  'bill.updated': { en: 'Bill updated', am: 'ሂሳብ ተዘምኗል' },
+  'bill.deleted': { en: 'Bill deleted', am: 'ሂሳብ ተሰርዟል' },
+  'bill.duplicate': { en: 'A bill already exists for this apartment, month, and year.', am: 'ለዚህ አፓርታማ በዚህ ወር እና ዓመት ሂሳብ አስቀድሞ አለ።' },
 
   // Users
   'user.approve': { en: 'Approve', am: 'አጽድቅ' },
