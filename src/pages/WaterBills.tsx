@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Droplets, Plus, Loader2, CheckCircle, Download, Filter } from 'lucide-react';
+import { Droplets, Plus, Loader2, CheckCircle, Download, Filter, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBillPdf } from '@/lib/pdfGenerator';
 import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
@@ -32,6 +32,9 @@ const WaterBills = () => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
   const [form, setForm] = useState({ apartment_id: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()), amount: '' });
+  const [editing, setEditing] = useState<WaterBill | null>(null);
+  const [editForm, setEditForm] = useState({ month: '1', year: '', amount: '' });
+  const [deleting, setDeleting] = useState<WaterBill | null>(null);
 
   const fetchData = async () => {
     const { data: apts } = await supabase.from('apartments').select('id, label, tenant_name').eq('is_occupied', true);
@@ -52,9 +55,44 @@ const WaterBills = () => {
       amount: Number(form.amount),
     });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.code === '23505' ? t('bill.duplicate') : error.message);
+      return;
+    }
     toast.success(t('bill.add'));
     setShowAdd(false);
+    fetchData();
+  };
+
+  const openEdit = (bill: WaterBill) => {
+    setEditing(bill);
+    setEditForm({ month: String(bill.month), year: String(bill.year), amount: String(bill.amount) });
+  };
+
+  const handleUpdate = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const { error } = await supabase.from('water_bills').update({
+      month: Number(editForm.month),
+      year: Number(editForm.year),
+      amount: Number(editForm.amount),
+    }).eq('id', editing.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.code === '23505' ? t('bill.duplicate') : error.message);
+      return;
+    }
+    toast.success(t('bill.updated'));
+    setEditing(null);
+    fetchData();
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    const { error } = await supabase.from('water_bills').delete().eq('id', deleting.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('bill.deleted'));
+    setDeleting(null);
     fetchData();
   };
 
@@ -131,6 +169,12 @@ const WaterBills = () => {
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadPdf(bill)} title={bill.is_paid ? t('bill.downloadReceipt') : t('bill.downloadInvoice')}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(bill)} title={t('bill.edit')}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleting(bill)} title={t('bill.delete')}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -189,6 +233,52 @@ const WaterBills = () => {
             <Button onClick={handleAdd} disabled={saving} className="gold-gradient text-card">
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} {t('apt.save')}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t('bill.edit')} - {t('nav.water')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{t('bill.month')}</label>
+                <Select value={editForm.month} onValueChange={v => setEditForm({...editForm, month: v})}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {tMonths.map((m, i) => <SelectItem key={i} value={String(i+1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t('bill.year')}</label>
+                <Input type="number" value={editForm.year} onChange={e => setEditForm({...editForm, year: e.target.value})} className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t('bill.amount')}</label>
+              <Input type="number" value={editForm.amount} onChange={e => setEditForm({...editForm, amount: e.target.value})} className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>{t('apt.cancel')}</Button>
+            <Button onClick={handleUpdate} disabled={saving} className="gold-gradient text-card">
+              {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} {t('apt.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t('bill.delete')}?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('bill.deleteConfirm')}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>{t('apt.cancel')}</Button>
+            <Button variant="destructive" onClick={handleDelete}>{t('bill.delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
