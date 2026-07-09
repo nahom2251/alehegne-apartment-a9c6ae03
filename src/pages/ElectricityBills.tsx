@@ -134,6 +134,7 @@ const ElectricityBills = () => {
     const step1 = base + 16;
     const step2 = step1 + (0.15 * step1);
     const step3 = step2 + 10;
+    const r = (n: number) => Math.round(n).toLocaleString();
     await generateBillPdf({
       tenantName: bill.apartments?.tenant_name || 'N/A',
       unitLabel: bill.apartments?.label || 'N/A',
@@ -145,14 +146,14 @@ const ElectricityBills = () => {
       details: {
         'kWh consumed': bill.kwh,
         'Rate per kWh': bill.rate,
-        'Base cost': base.toFixed(2),
-        'Service fee': '16.00',
-        'After service (Base+16)': step1.toFixed(2),
-        'Tax (15%)': (0.15 * step1).toFixed(2),
-        'After tax': step2.toFixed(2),
-        'TV Tax': '10.00',
-        'After TV tax': step3.toFixed(2),
-        'Control Tax (0.5%)': (0.005 * step3).toFixed(2),
+        'Base cost': r(base),
+        'Service fee': '16',
+        'After service (Base+16)': r(step1),
+        'Tax (15%)': r(0.15 * step1),
+        'After tax': r(step2),
+        'TV Tax': '10',
+        'After TV tax': r(step3),
+        'Control Tax (0.5%)': r(0.005 * step3),
       },
       lang,
     });
