@@ -274,19 +274,29 @@ const UtilityInvoices = () => {
     if (inv.water_amount > 0) items.push({ billType: 'Water', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.water_amount), paidAt: inv.paid_at || undefined });
     if (inv.security_amount > 0) items.push({ billType: 'Security', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.security_amount), paidAt: inv.paid_at || undefined });
     if (items.length === 0) { toast.error(t('ui.nothingDownload')); return; }
-    const [{ pickPdfLanguage }, { generateCombinedReceiptPdf }] = await Promise.all([
-      import('@/lib/pickPdfLanguage'),
-      import('@/lib/pdfGenerator'),
-    ]);
-    const lang = await pickPdfLanguage();
-    if (!lang) return;
-    await generateCombinedReceiptPdf({
-      tenantName: apt?.tenant_name || 'Tenant',
-      unitLabel: apt?.label || '-',
-      items,
-      isPaid: inv.status === 'paid',
-      lang,
-    });
+    try {
+      const [{ pickPdfLanguage }, { generateCombinedReceiptPdf }] = await Promise.all([
+        import('@/lib/pickPdfLanguage'),
+        import('@/lib/pdfGenerator'),
+      ]);
+      const lang = await pickPdfLanguage();
+      if (!lang) return;
+      const toastId = toast.loading(lang === 'am' ? 'ፒዲኤፍ በመፍጠር ላይ...' : 'Generating PDF...');
+      try {
+        await generateCombinedReceiptPdf({
+          tenantName: apt?.tenant_name || 'Tenant',
+          unitLabel: apt?.label || '-',
+          items,
+          isPaid: inv.status === 'paid',
+          lang,
+        });
+        toast.success('PDF downloaded', { id: toastId });
+      } catch (err: any) {
+        toast.error(`PDF failed: ${err?.message || err}`, { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error(`PDF failed: ${err?.message || err}`);
+    }
   };
 
   const filtered = useMemo(() => {
