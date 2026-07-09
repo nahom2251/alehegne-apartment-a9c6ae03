@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Zap, Droplets, Building2, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
-import { generateRevenuePdf } from '@/lib/pdfGenerator';
-import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 const COLORS = ['hsl(43, 74%, 49%)', 'hsl(48, 96%, 53%)', 'hsl(200, 80%, 50%)'];
 
@@ -64,6 +62,10 @@ const Revenue = () => {
   ];
 
   const handleDownloadReport = async () => {
+    const [{ pickPdfLanguage }, { generateRevenuePdf }] = await Promise.all([
+      import('@/lib/pickPdfLanguage'),
+      import('@/lib/pdfGenerator'),
+    ]);
     const lang = await pickPdfLanguage();
     if (!lang) return;
     await generateRevenuePdf({

@@ -9,8 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, Plus, Loader2, CheckCircle, Download, Filter, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateBillPdf } from '@/lib/pdfGenerator';
-import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 interface Apartment { id: string; label: string; tenant_name: string | null; }
 interface SecurityBill {
@@ -37,9 +35,11 @@ const SecurityBills = () => {
   const [deleting, setDeleting] = useState<SecurityBill | null>(null);
 
   const fetchData = async () => {
-    const { data: apts } = await supabase.from('apartments').select('id, label, tenant_name').eq('is_occupied', true);
+    const [{ data: apts }, { data: b }] = await Promise.all([
+      supabase.from('apartments').select('id, label, tenant_name').eq('is_occupied', true),
+      supabase.from('security_bills').select('*, apartments(label, tenant_name)').order('year', { ascending: false }).order('month', { ascending: false }),
+    ]);
     if (apts) setApartments(apts);
-    const { data: b } = await supabase.from('security_bills').select('*, apartments(label, tenant_name)').order('year', { ascending: false }).order('month', { ascending: false });
     if (b) setBills(b as SecurityBill[]);
   };
 
@@ -103,6 +103,10 @@ const SecurityBills = () => {
   };
 
   const downloadPdf = async (bill: SecurityBill) => {
+    const [{ pickPdfLanguage }, { generateBillPdf }] = await Promise.all([
+      import('@/lib/pickPdfLanguage'),
+      import('@/lib/pdfGenerator'),
+    ]);
     const lang = await pickPdfLanguage();
     if (!lang) return;
     await generateBillPdf({

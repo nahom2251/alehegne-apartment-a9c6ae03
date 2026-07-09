@@ -8,8 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, ChevronLeft, ChevronRight, Receipt, Save, Send, CheckCircle, Loader2, Zap, Droplets, ShieldCheck } from 'lucide-react';
-import { generateCombinedReceiptPdf } from '@/lib/pdfGenerator';
-import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 import { toast } from 'sonner';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -276,6 +274,10 @@ const UtilityInvoices = () => {
     if (inv.water_amount > 0) items.push({ billType: 'Water', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.water_amount), paidAt: inv.paid_at || undefined });
     if (inv.security_amount > 0) items.push({ billType: 'Security', month: MONTHS[inv.month - 1], year: inv.year, amount: Number(inv.security_amount), paidAt: inv.paid_at || undefined });
     if (items.length === 0) { toast.error(t('ui.nothingDownload')); return; }
+    const [{ pickPdfLanguage }, { generateCombinedReceiptPdf }] = await Promise.all([
+      import('@/lib/pickPdfLanguage'),
+      import('@/lib/pdfGenerator'),
+    ]);
     const lang = await pickPdfLanguage();
     if (!lang) return;
     await generateCombinedReceiptPdf({
