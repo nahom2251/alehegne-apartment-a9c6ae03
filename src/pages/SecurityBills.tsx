@@ -35,9 +35,11 @@ const SecurityBills = () => {
   const [deleting, setDeleting] = useState<SecurityBill | null>(null);
 
   const fetchData = async () => {
-    const { data: apts } = await supabase.from('apartments').select('id, label, tenant_name').eq('is_occupied', true);
+    const [{ data: apts }, { data: b }] = await Promise.all([
+      supabase.from('apartments').select('id, label, tenant_name').eq('is_occupied', true),
+      supabase.from('security_bills').select('*, apartments(label, tenant_name)').order('year', { ascending: false }).order('month', { ascending: false }),
+    ]);
     if (apts) setApartments(apts);
-    const { data: b } = await supabase.from('security_bills').select('*, apartments(label, tenant_name)').order('year', { ascending: false }).order('month', { ascending: false });
     if (b) setBills(b as SecurityBill[]);
   };
 
