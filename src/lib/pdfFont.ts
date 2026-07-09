@@ -22,10 +22,22 @@ const arrayBufferToBase64 = (buf: ArrayBuffer): string => {
 };
 
 const loadBase64 = async (): Promise<string> => {
-  const res = await fetch(FONT_URL);
-  if (!res.ok) throw new Error(`Failed to fetch Amharic font (${res.status})`);
-  const buf = await res.arrayBuffer();
-  return arrayBufferToBase64(buf);
+  const urls = [
+    FONT_URL,
+    'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-ethiopic@5.0.0/files/noto-sans-ethiopic-ethiopic-400-normal.woff',
+  ];
+  let lastErr: unknown = null;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = await res.arrayBuffer();
+      return arrayBufferToBase64(buf);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw new Error(`Failed to fetch Amharic font: ${String(lastErr)}`);
 };
 
 /**
@@ -34,7 +46,13 @@ const loadBase64 = async (): Promise<string> => {
  * across calls; only the per-document registration is repeated.
  */
 export const ensureEthiopicFont = async (doc: jsPDF): Promise<void> => {
-  if (!fontBase64Promise) fontBase64Promise = loadBase64();
+  if (!fontBase64Promise) {
+    fontBase64Promise = loadBase64().catch((e) => {
+      // Don't cache failures — next call retries.
+      fontBase64Promise = null;
+      throw e;
+    });
+  }
   const b64 = await fontBase64Promise;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const d = doc as any;
