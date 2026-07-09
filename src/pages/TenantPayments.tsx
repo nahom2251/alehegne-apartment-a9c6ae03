@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Loader2, Users, Home, Zap, Droplets, ShieldCheck, Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { generateTenantPaymentsPdf } from '@/lib/pdfGenerator';
-import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
@@ -149,6 +147,10 @@ const TenantPayments = () => {
   }, [rows, aptRent, aptFilter, typeFilter, statusFilter, filtered.length]);
 
   const handleDownloadPdf = async () => {
+    const [{ pickPdfLanguage }, { generateTenantPaymentsPdf }] = await Promise.all([
+      import('@/lib/pickPdfLanguage'),
+      import('@/lib/pdfGenerator'),
+    ]);
     const lang = await pickPdfLanguage();
     if (!lang) return;
     const tenantLabel = aptFilter === 'all' ? 'all' : (aptMap[aptFilter]?.label || 'all');
