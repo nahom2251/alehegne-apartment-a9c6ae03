@@ -9,8 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { Zap, Plus, Loader2, CheckCircle, Download, Filter, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateBillPdf } from '@/lib/pdfGenerator';
-import { pickPdfLanguage } from '@/lib/pickPdfLanguage';
 
 interface Apartment { id: string; label: string; tenant_name: string | null; is_occupied: boolean | null; }
 interface ElecBill {
@@ -124,6 +122,10 @@ const ElectricityBills = () => {
   };
 
   const downloadPdf = async (bill: ElecBill) => {
+    const [{ pickPdfLanguage }, { generateBillPdf }] = await Promise.all([
+      import('@/lib/pickPdfLanguage'),
+      import('@/lib/pdfGenerator'),
+    ]);
     const lang = await pickPdfLanguage();
     if (!lang) return;
     const base = bill.kwh * bill.rate;
