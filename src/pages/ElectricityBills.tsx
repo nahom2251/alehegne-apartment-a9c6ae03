@@ -135,6 +135,29 @@ const ElectricityBills = () => {
     const step2 = step1 + (0.15 * step1);
     const step3 = step2 + 10;
     const r = (n: number) => Math.round(n).toLocaleString();
+    const labels = lang === 'am' ? {
+      kwh: 'የተጠቀሙት kWh',
+      rate: 'ተመን በ kWh',
+      base: 'መሠረታዊ ወጪ',
+      service: 'የአገልግሎት ክፍያ',
+      afterService: 'ከአገልግሎት በኋላ (መሠረት+16)',
+      tax: 'ግብር (15%)',
+      afterTax: 'ከግብር በኋላ',
+      tv: 'የቲቪ ግብር',
+      afterTv: 'ከቲቪ ግብር በኋላ',
+      control: 'የቁጥጥር ግብር (0.5%)',
+    } : {
+      kwh: 'kWh consumed',
+      rate: 'Rate per kWh',
+      base: 'Base cost',
+      service: 'Service fee',
+      afterService: 'After service (Base+16)',
+      tax: 'Tax (15%)',
+      afterTax: 'After tax',
+      tv: 'TV Tax',
+      afterTv: 'After TV tax',
+      control: 'Control Tax (0.5%)',
+    };
     await generateBillPdf({
       tenantName: bill.apartments?.tenant_name || 'N/A',
       unitLabel: bill.apartments?.label || 'N/A',
@@ -144,16 +167,16 @@ const ElectricityBills = () => {
       amount: bill.total || 0,
       isPaid: !!bill.is_paid,
       details: {
-        'kWh consumed': bill.kwh,
-        'Rate per kWh': bill.rate,
-        'Base cost': r(base),
-        'Service fee': '16',
-        'After service (Base+16)': r(step1),
-        'Tax (15%)': r(0.15 * step1),
-        'After tax': r(step2),
-        'TV Tax': '10',
-        'After TV tax': r(step3),
-        'Control Tax (0.5%)': r(0.005 * step3),
+        [labels.kwh]: bill.kwh,
+        [labels.rate]: bill.rate,
+        [labels.base]: r(base),
+        [labels.service]: '16',
+        [labels.afterService]: r(step1),
+        [labels.tax]: r(0.15 * step1),
+        [labels.afterTax]: r(step2),
+        [labels.tv]: '10',
+        [labels.afterTv]: r(step3),
+        [labels.control]: r(0.005 * step3),
       },
       lang,
     });
