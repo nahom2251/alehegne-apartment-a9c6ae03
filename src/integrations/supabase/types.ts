@@ -550,6 +550,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      recalc_utility_invoice_status: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
       register_tenant: {
         Args: { _apartment_id: string; _phone: string }
         Returns: undefined
