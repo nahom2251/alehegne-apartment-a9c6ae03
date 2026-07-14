@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/components/SplashScreen";
 import AppLayout from "@/components/AppLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
 const Auth = lazy(() => import("@/pages/Auth"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Apartments = lazy(() => import("@/pages/Apartments"));
@@ -195,9 +196,11 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AuthProvider>
-              <AppWithSplash />
-            </AuthProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <AppWithSplash />
+              </AuthProvider>
+            </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
