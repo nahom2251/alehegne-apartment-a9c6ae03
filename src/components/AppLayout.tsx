@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/AppSidebar';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -7,10 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const AppLayout = () => {
   const { signOut, profile } = useAuth();
   const { t } = useLanguage();
+  const location = useLocation();
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -34,7 +36,9 @@ const AppLayout = () => {
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <Outlet />
+            <ErrorBoundary key={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </main>
           <footer className="text-center py-3 text-xs text-muted-foreground border-t border-border">
             <p>{t('app.powered')}</p>
