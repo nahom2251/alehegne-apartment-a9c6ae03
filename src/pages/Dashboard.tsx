@@ -23,6 +23,8 @@ interface Apartment {
   move_in_date: string | null;
   monthly_rent: number | null;
   rent_paid_months: number | null;
+  floor: number;
+  position: string;
 }
 
 interface BillRow { amount: number | null; total?: number | null; is_paid: boolean | null; paid_at: string | null; created_at: string; }
