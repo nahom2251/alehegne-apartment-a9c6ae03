@@ -22,7 +22,24 @@ const UserManagement = lazy(() => import("@/pages/UserManagement"));
 const TenantPayments = lazy(() => import("@/pages/TenantPayments"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cached data is considered fresh for 60s — repeat page visits
+      // (Dashboard, TenantPayments, UtilityInvoices, etc.) render instantly
+      // from cache and revalidate silently in the background.
+      staleTime: 60_000,
+      // Keep unused query data around for 5 min before garbage-collecting.
+      gcTime: 5 * 60_000,
+      // Avoid the "refetch storm" when switching tabs / bringing the PWA
+      // back to the foreground — the visibility handler in AppWithSplash
+      // already handles long-away resets.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+});
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
