@@ -205,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
     setRoles([]);
     writeAuthCache(null);
+    try { localStorage.removeItem('as_apt_session_start'); } catch { /* ignore */ }
   };
 
   const isSuperAdmin = roles.includes('super_admin');
