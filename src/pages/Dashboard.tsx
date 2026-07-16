@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,37 +32,42 @@ interface BillRow { amount: number | null; total?: number | null; is_paid: boole
 
 const Dashboard = () => {
   const { t } = useLanguage();
-  const { isSuperAdmin } = useAuth();
-  const [apartments, setApartments] = useState<Apartment[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [elec, setElec] = useState<BillRow[]>([]);
-  const [water, setWater] = useState<BillRow[]>([]);
-  const [security, setSecurity] = useState<BillRow[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchData = async () => {
-      const [aptRes, pendingRes, elecRes, waterRes, secRes] = await Promise.all([
-        supabase.from('apartments').select('*').order('floor'),
-        isSuperAdmin
-          ? supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-          : Promise.resolve({ count: 0 } as any),
-        supabase.from('electricity_bills').select('total, is_paid, paid_at, created_at'),
-        supabase.from('water_bills').select('amount, is_paid, paid_at, created_at'),
-        supabase.from('security_bills').select('amount, is_paid, paid_at, created_at'),
-      ]);
-      if (cancelled) return;
-      if (aptRes.data) setApartments(aptRes.data);
-      setPendingCount((pendingRes as any).count || 0);
-      setElec((elecRes.data as any) || []);
-      setWater((waterRes.data as any) || []);
-      setSecurity((secRes.data as any) || []);
-      setLoading(false);
-    };
-    fetchData();
-    return () => { cancelled = true; };
-  }, [isSuperAdmin]);
+  // Each query is independent and cached — repeat visits render instantly
+  // from cache while data revalidates in the background.
+  const { data: apartments = [], isLoading: aptsLoading } = useQuery({
+    queryKey: ['dashboard', 'apartments'],
+    queryFn: async () => {
+      const { data } = await supabase.from('apartments').select('*').order('floor');
+      return (data as Apartment[]) || [];
+    },
+    staleTime: 60_000,
+  });
+  const { data: elec = [] } = useQuery({
+    queryKey: ['dashboard', 'electricity_bills'],
+    queryFn: async () => {
+      const { data } = await supabase.from('electricity_bills').select('total, is_paid, paid_at, created_at');
+      return (data as BillRow[]) || [];
+    },
+    staleTime: 60_000,
+  });
+  const { data: water = [] } = useQuery({
+    queryKey: ['dashboard', 'water_bills'],
+    queryFn: async () => {
+      const { data } = await supabase.from('water_bills').select('amount, is_paid, paid_at, created_at');
+      return (data as BillRow[]) || [];
+    },
+    staleTime: 60_000,
+  });
+  const { data: security = [] } = useQuery({
+    queryKey: ['dashboard', 'security_bills'],
+    queryFn: async () => {
+      const { data } = await supabase.from('security_bills').select('amount, is_paid, paid_at, created_at');
+      return (data as BillRow[]) || [];
+    },
+    staleTime: 60_000,
+  });
+  const loading = aptsLoading;
 
   const occupied = apartments.filter(a => a.is_occupied);
   const vacant = apartments.filter(a => !a.is_occupied);
