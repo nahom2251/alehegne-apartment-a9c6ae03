@@ -78,7 +78,7 @@ const translations: Translations = {
 
   // Nav
   'nav.dashboard': { en: 'Dashboard', am: 'ዳሽቦርድ' },
-  'nav.apartments': { en: 'Apartments', am: 'አፓርትመንቶች' },
+  'nav.apartments': { en: 'Tenants Information', am: 'የተከራዮች መረጃ' },
   'nav.electricity': { en: 'Electricity', am: 'ኤሌክትሪክ' },
   'nav.water': { en: 'Water', am: 'ውሃ' },
   'nav.security': { en: 'Security', am: 'ጥበቃ' },
