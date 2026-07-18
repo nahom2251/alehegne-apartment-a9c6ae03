@@ -284,15 +284,15 @@ const UtilityInvoices = () => {
       const toastId = toast.loading(lang === 'am' ? 'ፒዲኤፍ በመፍጠር ላይ...' : 'Generating PDF...');
       try {
         await generateCombinedReceiptPdf({
-          tenantName: apt?.tenant_name || 'Tenant',
+          tenantName: apt?.tenant_name || (lang === 'am' ? 'ተከራይ' : 'Tenant'),
           unitLabel: apt?.label || '-',
           items,
           isPaid: inv.status === 'paid',
           lang,
         });
-        toast.success('PDF downloaded', { id: toastId });
+        toast.success(lang === 'am' ? 'ፒዲኤፍ ተውርዷል' : 'PDF downloaded', { id: toastId });
       } catch (err: any) {
-        toast.error(`PDF failed: ${err?.message || err}`, { id: toastId });
+        toast.error(`${lang === 'am' ? 'ፒዲኤፍ አልተሳካም' : 'PDF failed'}: ${err?.message || err}`, { id: toastId });
       }
     } catch (err: any) {
       toast.error(`PDF failed: ${err?.message || err}`);
