@@ -39,6 +39,22 @@ const BILL_TYPE_AM: Record<string, string> = {
   Rent: 'ኪራይ', Electricity: 'መብራት', Water: 'ውሃ', Security: 'ጥበቃ',
 };
 
+// Filter values arrive from the UI as lowercase English keys ("rent",
+// "electricity", "paid", "all"). Map them so they render in the chosen PDF
+// language instead of leaking raw English into an Amharic report.
+const FILTER_VALUE: Record<PdfLang, Record<string, string>> = {
+  en: {
+    all: 'All', rent: 'Rent', electricity: 'Electricity', water: 'Water',
+    security: 'Security', paid: 'Paid', pending: 'Pending', unpaid: 'Pending',
+  },
+  am: {
+    all: 'ሁሉም', rent: 'ኪራይ', electricity: 'መብራት', water: 'ውሃ',
+    security: 'ጥበቃ', paid: 'ተከፍሏል', pending: 'በመጠባበቅ', unpaid: 'በመጠባበቅ',
+  },
+};
+const tFilter = (lang: PdfLang, v?: string) =>
+  !v ? '' : (FILTER_VALUE[lang][v.toLowerCase()] ?? v);
+
 const STR = {
   en: {
     asApt: 'AS Apt.',
@@ -647,8 +663,8 @@ export const generateTenantPaymentsPdf = async (data: TenantPaymentsReportData) 
   if (data.filters) {
     const parts: string[] = [];
     if (data.filters.tenant && data.filters.tenant !== 'all') parts.push(`${L.filterTenant}: ${data.filters.tenant}`);
-    if (data.filters.type && data.filters.type !== 'all') parts.push(`${L.filterType}: ${data.filters.type}`);
-    if (data.filters.status && data.filters.status !== 'all') parts.push(`${L.filterStatus}: ${data.filters.status}`);
+    if (data.filters.type && data.filters.type !== 'all') parts.push(`${L.filterType}: ${tFilter(lang, data.filters.type)}`);
+    if (data.filters.status && data.filters.status !== 'all') parts.push(`${L.filterStatus}: ${tFilter(lang, data.filters.status)}`);
     if (parts.length) {
       doc.text(parts.join('   |   '), marginX, y);
       y += 6;
